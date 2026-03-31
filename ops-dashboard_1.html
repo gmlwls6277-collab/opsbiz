@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPSbiz — 운영 관리 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563EB;--blue-d:#1D4ED8;--blue-l:#EFF6FF;--blue-m:#DBEAFE;
+  --green:#10B981;--green-l:#ECFDF5;--green-d:#059669;
+  --amber:#F59E0B;--amber-l:#FFFBEB;--amber-d:#B45309;
+  --red:#EF4444;--red-l:#FEF2F2;--red-d:#B91C1C;
+  --purple:#8B5CF6;--purple-l:#F5F3FF;--purple-d:#6D28D9;
+  --cyan:#06B6D4;--cyan-l:#ECFEFF;
+  --g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;--g300:#CBD5E1;
+  --g400:#94A3B8;--g500:#64748B;--g600:#475569;--g700:#334155;--g900:#0F172A;
+  --r:7px;--rlg:14px;
+  --sh:0 1px 3px rgba(15,23,42,.07),0 4px 12px rgba(15,23,42,.05);
+  --shmd:0 4px 20px rgba(15,23,42,.12),0 8px 32px rgba(15,23,42,.07);
+}
+body{font-family:"Pretendard",-apple-system,sans-serif;background:var(--g50);color:var(--g900);min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}input,select,textarea{cursor:text}
+
+/* ══ HEADER ══════════════════════════════════════ */
+.hdr{height:54px;background:#fff;border-bottom:1px solid var(--g200);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:300;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-right:8px}
+.logo-mark{width:28px;height:28px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:14px;height:14px}
+.logo-text{font-size:14px;font-weight:800;letter-spacing:-.02em}
+.logo-text b{color:var(--blue)}
+.logo-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--g100);color:var(--g500);letter-spacing:.04em}
+.hdiv{width:1px;height:20px;background:var(--g200)}
+.hnav{display:flex;align-items:center;gap:1px;flex:1}
+.hnav-btn{padding:5px 12px;font-size:12px;font-weight:500;color:var(--g500);border:none;background:none;border-radius:var(--r);transition:all .12s;white-space:nowrap}
+.hnav-btn:hover{color:var(--g900);background:var(--g100)}
+.hnav-btn.on{color:var(--blue);font-weight:700;background:var(--blue-l)}
+.hright{display:flex;align-items:center;gap:8px;margin-left:auto}
+.btn-new{display:flex;align-items:center;gap:5px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:7px 15px;font-size:12px;font-weight:700;transition:background .12s,transform .1s}
+.btn-new:hover{background:var(--blue-d);transform:translateY(-1px)}
+.btn-new svg{width:12px;height:12px}
+
+/* ══ LAYOUT ════════════════════════════════════════ */
+.app{display:flex;height:calc(100vh - 54px);overflow:hidden}
+
+/* ══ SIDEBAR ══════════════════════════════════════ */
+.sb{width:48px;flex-shrink:0;background:#fff;border-right:1px solid var(--g200);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px}
+.si{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--g400);border:none;background:transparent;transition:all .12s;position:relative;flex-shrink:0}
+.si svg{width:16px;height:16px}
+.si:hover{background:var(--g100);color:var(--g700)}
+.si.on{background:var(--blue-l);color:var(--blue)}
+.si-badge{position:absolute;top:3px;right:3px;min-width:14px;height:14px;background:var(--red);color:#fff;border-radius:7px;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;font-family:"Space Mono",monospace}
+.sb-sep{width:22px;height:1px;background:var(--g200);margin:3px 0}
+
+/* ══ MAIN ══════════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.pane{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+.pane.on{display:flex;flex-direction:column}
+
+/* ══════════════════════════════════════════════════
+   PANE 1 : 대시보드
+══════════════════════════════════════════════════ */
+.dash-body{flex:1;overflow-y:auto;padding:20px;background:var(--g50)}
+
+/* KPI 카드 */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:15px 16px;position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .12s}
+.kpi:hover{box-shadow:var(--shmd);transform:translateY(-2px)}
+.kpi-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rlg) var(--rlg) 0 0}
+.kpi-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.kpi-icon svg{width:13px;height:13px}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--g400);margin-bottom:3px}
+.kpi-num{font-family:"Space Mono",monospace;font-size:26px;font-weight:700;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--g500)}
+.kpi-delta{font-size:10px;font-weight:700;margin-top:5px}
+.up{color:var(--green-d)}.dn{color:var(--red-d)}.neu{color:var(--g400)}
+
+/* 2-col grid */
+.dg{display:grid;gap:13px;margin-bottom:13px}
+.dg2{grid-template-columns:1fr 1fr}
+.dg21{grid-template-columns:2fr 1fr}
+.dg12{grid-template-columns:1fr 2fr}
+.dg3{grid-template-columns:1fr 1fr 1fr}
+
+/* 카드 */
+.card{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:16px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:8px}
+.card-title{font-size:12px;font-weight:700;color:var(--g900)}
+.card-sub{font-size:10px;font-weight:400;color:var(--g400)}
+.card-link{font-size:11px;font-weight:500;color:var(--blue);border:none;background:none;cursor:pointer;padding:0;white-space:nowrap}
+
+/* 섹션 타이틀 */
+.sec-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g400);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec-label::after{content:"";flex:1;height:1px;background:var(--g200)}
+
+/* 인라인 바 차트 */
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:72px}
+.bc-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bc-bars{display:flex;gap:2px;align-items:flex-end;width:100%;justify-content:center;height:54px}
+.bc-b{border-radius:3px 3px 0 0;min-width:6px;flex:1;transition:opacity .15s}
+.bc-b:hover{opacity:.72}
+.bc-lbl{font-size:9px;color:var(--g400);text-align:center;line-height:1.2}
+.bc-val{font-size:9px;font-weight:700;color:var(--g700)}
+
+/* 가로 바 */
+.hbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.hbar-lbl{font-size:11px;font-weight:500;color:var(--g600);width:90px;flex-shrink:0}
+.hbar-out{flex:1;height:6px;background:var(--g100);border-radius:99px;overflow:hidden}
+.hbar-in{height:100%;border-radius:99px;transition:width .5s}
+.hbar-val{font-size:11px;font-weight:700;font-family:"Space Mono",monospace;width:38px;text-align:right;flex-shrink:0}
+
+/* 아바타 */
+.av{display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:800;color:#fff;flex-shrink:0;font-family:"Pretendard",sans-serif}
+
+/* 배지 */
+.bdg{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
+/* QA 상태 */
+.qa-open    {background:#F0F9FF;color:#0369A1;border:1px solid #BAE6FD}
+.qa-progress{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-m)}
+.qa-review  {background:var(--amber-l);color:var(--amber-d);border:1px solid #FDE68A}
+.qa-done    {background:var(--green-l);color:var(--green-d);border:1px solid #A7F3D0}
+.qa-hold    {background:var(--g100);color:var(--g500);border:1px solid var(--g200)}
+/* 유형 */
+.tp-routine {background:#ECFEFF;color:#155E75;border:1px solid #A5F3FC}
+.tp-maint   {background:var(--blue-l);color:#1E40AF;border:1px solid var(--blue-m)}
+.tp-enhance {background:var(--purple-l);color:var(--purple-d);border:1px solid #DDD6FE}
+.tp-bug     {background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.tp-incident{background:var(--red-l);color:var(--red-d);border:1px solid #FECACA;font-weight:800}
+/* 팀 */
+.tm-kr{background:#EFF6FF;color:#1E40AF;border:1px solid var(--blue-m)}
+.tm-vn{background:var(--green-l);color:var(--green-d);border:1px solid #A7F3D0}
+/* 크기 */
+.sz-s{background:var(--green-l);color:var(--green-d)}
+.sz-m{background:var(--amber-l);color:var(--amber-d)}
+.sz-l{background:var(--red-l);color:var(--red-d)}
+
+/* 도넛 링 */
+.ring-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.ring-center{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-val{font-family:"Space Mono",monospace;font-weight:800;line-height:1;color:var(--g900)}
+.ring-lbl{font-size:9px;color:var(--g400);margin-top:2px}
+
+/* 티켓 미니 리스트 */
+.mini-tk{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g100);cursor:pointer;transition:background .1s;border-radius:var(--r)}
+.mini-tk:last-child{border:none}
+.mini-tk:hover{background:var(--g50);padding-left:4px;padding-right:4px}
+.mini-id{font-family:"Space Mono",monospace;font-size:9px;color:var(--g400);width:44px;flex-shrink:0}
+.mini-title{flex:1;font-size:12px;font-weight:600;color:var(--g900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
+
+/* KR vs VN 비교 카드 */
+.vs-card{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);overflow:hidden}
+.vs-hd{display:grid;grid-template-columns:1fr 56px 1fr;background:var(--g50);border-bottom:1px solid var(--g200)}
+.vs-team{padding:11px 14px;display:flex;align-items:center;gap:7px}
+.vs-team-r{flex-direction:row-reverse;text-align:right}
+.vs-team-name{font-size:12px;font-weight:800;letter-spacing:-.01em}
+.vs-center{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--g400);border-left:1px solid var(--g200);border-right:1px solid var(--g200);font-family:"Space Mono",monospace}
+.vs-row{display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--g100);align-items:stretch}
+.vs-row:last-child{border:none}
+.vs-val{padding:9px 14px;font-size:13px;font-weight:600;color:var(--g900);display:flex;align-items:center}
+.vs-val-r{justify-content:flex-end}
+.vs-metric{padding:9px 6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--g400);background:var(--g50);border-left:1px solid var(--g100);border-right:1px solid var(--g100);text-align:center;line-height:1.3}
+.win-kr{color:var(--blue);font-weight:800}.win-vn{color:var(--green-d);font-weight:800}
+.grade-chip{display:inline-flex;align-items:center;justify-content:center;font-family:"Space Mono",monospace;font-size:11px;font-weight:800;padding:2px 8px;border-radius:var(--r)}
+.gr-A{background:var(--green-l);color:var(--green-d)}.gr-B{background:var(--blue-l);color:var(--blue)}.gr-C{background:var(--amber-l);color:var(--amber-d)}.gr-D{background:var(--red-l);color:var(--red-d)}
+
+/* 팀 박스 */
+.team-box{border:1px solid var(--g200);border-radius:var(--r);padding:12px}
+.team-stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--g100);font-size:11px}
+.team-stat-row:last-child{border:none}
+.tsr-lbl{color:var(--g500);font-weight:500}
+.tsr-val{font-weight:700;font-family:"Space Mono",monospace;color:var(--g900)}
+
+/* 멤버 리스트 */
+.member-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g100)}
+.member-row:last-child{border:none}
+.mr-name{font-size:12px;font-weight:600;color:var(--g900)}
+.mr-role{font-size:10px;color:var(--g400);margin-top:1px}
+.mr-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+.mr-bar-row{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--g400)}
+.mr-bar-out{flex:1;height:4px;background:var(--g100);border-radius:99px;overflow:hidden}
+.mr-bar-fill{height:100%;border-radius:99px;transition:width .5s}
+
+/* 품질 게이지 */
+.quality-dial{display:flex;flex-direction:column;align-items:center;gap:4px}
+.qd-num{font-family:"Space Mono",monospace;font-size:20px;font-weight:800;line-height:1}
+.qd-lbl{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--g400)}
+
+/* 장애 배너 */
+.incident-banner{background:linear-gradient(135deg,#450a0a,#991b1b);border-radius:var(--rlg);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;cursor:pointer;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+.ib-icon{font-size:24px;flex-shrink:0}
+.ib-text{flex:1}
+.ib-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:3px}
+.ib-sub{font-size:11px;color:rgba(255,255,255,.7)}
+.ib-count{font-family:"Space Mono",monospace;font-size:32px;font-weight:800;color:#FCA5A5;flex-shrink:0}
+
+/* 활동 스트림 */
+.act-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--g100);cursor:pointer}
+.act-row:last-child{border:none}
+.act-row:hover{background:var(--g50);margin:0 -4px;padding-left:4px;padding-right:4px;border-radius:var(--r)}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-body{flex:1;min-width:0}
+.act-title{font-size:12px;font-weight:600;color:var(--g900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-meta{font-size:10px;color:var(--g400);margin-top:2px;display:flex;align-items:center;gap:5px}
+.act-time{font-size:10px;color:var(--g400);flex-shrink:0}
+
+/* 루틴 미니 */
+.rt-mini-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g100)}
+.rt-mini-row:last-child{border:none}
+.rt-chk-mini{width:16px;height:16px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .13s}
+.rt-mini-text{font-size:12px;color:var(--g700);flex:1}
+.rt-mini-text.done{text-decoration:line-through;color:var(--g400)}
+
+/* 퀵 액션 */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.quick-btn{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:var(--r);border:1px solid var(--g200);background:#fff;cursor:pointer;transition:all .13s;text-align:left;width:100%}
+.quick-btn:hover{border-color:var(--blue);background:var(--blue-l);box-shadow:var(--sh)}
+.quick-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.quick-t{font-size:12px;font-weight:700;color:var(--g900)}
+.quick-s{font-size:10px;color:var(--g400);margin-top:1px}
+
+/* ══════════════════════════════════════════════════
+   PANE 2 : 티켓 (이메일 클라이언트 레이아웃)
+══════════════════════════════════════════════════ */
+.tk-wrap{display:flex;flex:1;overflow:hidden}
+.tk-list-col{width:310px;flex-shrink:0;border-right:1px solid var(--g200);display:flex;flex-direction:column;background:#fff}
+.tk-list-hd{padding:12px 12px 8px;border-bottom:1px solid var(--g100);flex-shrink:0}
+.tk-list-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tk-list-title{font-size:13px;font-weight:700;color:var(--g900)}
+.tk-cnt-badge{font-family:"Space Mono",monospace;font-size:10px;font-weight:700;background:var(--blue-m);color:var(--blue);padding:2px 7px;border-radius:99px}
+.tk-filters{display:flex;flex-direction:column;gap:5px}
+.tk-search{position:relative}
+.tk-search svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--g400);pointer-events:none}
+.tk-search input{width:100%;background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:6px 8px 6px 26px;font-size:12px;outline:none;transition:border-color .12s;color:var(--g900)}
+.tk-search input:focus{border-color:var(--blue);background:#fff}
+.tk-search input::placeholder{color:var(--g400)}
+.f-chips{display:flex;gap:3px;flex-wrap:wrap}
+.fchip{padding:3px 8px;border-radius:99px;border:1px solid var(--g200);background:#fff;font-size:11px;font-weight:500;color:var(--g500);transition:all .1s;white-space:nowrap}
+.fchip:hover{border-color:var(--g300);color:var(--g700)}
+.fchip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tk-items{flex:1;overflow-y:auto;padding:7px}
+/* 티켓 아이템 */
+.tki{padding:10px 11px;border-radius:var(--r);border:1px solid var(--g200);background:#fff;margin-bottom:5px;cursor:pointer;transition:all .12s;border-left:3px solid transparent}
+.tki:hover{border-color:var(--blue);border-left-color:var(--blue);box-shadow:var(--sh)}
+.tki.on{border-color:var(--blue);border-left-color:var(--blue);background:var(--blue-l)}
+.tki.incident-item{border-left-color:var(--red)}
+.tki-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:4px}
+.tki-id{font-family:"Space Mono",monospace;font-size:9px;color:var(--g400)}
+.tki-title{font-size:12px;font-weight:600;color:var(--g900);line-height:1.38;margin-bottom:5px}
+.tki-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+/* 티켓 상세 */
+.tk-detail-col{flex:1;overflow-y:auto;background:var(--g50);display:flex;flex-direction:column}
+.tk-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--g400);font-size:12px;gap:8px}
+.tk-empty svg{width:44px;height:44px;opacity:.16}
+.td-body{padding:22px;max-width:780px}
+.td-id-row{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.td-title{font-size:19px;font-weight:800;color:var(--g900);letter-spacing:-.02em;line-height:1.35;margin-bottom:10px}
+.td-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
+.td-sec{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:16px;margin-bottom:11px}
+.td-sec-title{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--g400);margin-bottom:11px}
+.td-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.td-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.td-field{display:flex;flex-direction:column;gap:3px}
+.td-fl{font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.04em}
+.td-fv{font-size:13px;font-weight:500;color:var(--g900);display:flex;align-items:center;gap:5px}
+.td-fv-mono{font-family:"Space Mono",monospace;font-size:14px;font-weight:700}
+.td-desc{font-size:13px;color:var(--g700);line-height:1.7;white-space:pre-wrap}
+.td-note{margin-top:10px;padding:10px 12px;background:var(--amber-l);border-radius:var(--r);border:1px solid #FDE68A;font-size:12px;color:var(--amber-d);line-height:1.6}
+/* QA 스텝 셀렉터 */
+.qa-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.qa-step{padding:7px 4px;border-radius:var(--r);border:1.5px solid var(--g200);background:#fff;font-size:11px;font-weight:600;color:var(--g500);cursor:pointer;text-align:center;transition:all .12s;line-height:1.3}
+.qa-step:hover{border-color:var(--blue-m);background:var(--blue-l);color:var(--blue)}
+.qa-step.qa-on{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
+/* 소요시간 */
+.duration-box{display:flex;align-items:center;gap:16px;padding:12px 14px;background:var(--g50);border-radius:var(--r);border:1px solid var(--g200)}
+.dur-big{font-family:"Space Mono",monospace;font-size:24px;font-weight:800;line-height:1}
+.dur-lbl{font-size:10px;color:var(--g400);margin-top:2px}
+.dur-speed{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px}
+.speed-fast{background:var(--green-l);color:var(--green-d)}.speed-mid{background:var(--amber-l);color:var(--amber-d)}.speed-slow{background:var(--red-l);color:var(--red-d)}
+.td-actions{display:flex;gap:7px;padding:13px 22px;border-top:1px solid var(--g200);background:#fff;flex-shrink:0;align-items:center}
+.btn-ghost{padding:7px 13px;border:1px solid var(--g200);border-radius:var(--r);background:none;font-size:12px;font-weight:600;color:var(--g600);transition:all .12s}
+.btn-ghost:hover{border-color:var(--g300);color:var(--g900)}
+.btn-blue{padding:7px 15px;border:none;border-radius:var(--r);background:var(--blue);font-size:12px;font-weight:700;color:#fff;transition:background .12s}
+.btn-blue:hover{background:var(--blue-d)}
+.btn-green{display:flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid var(--green);border-radius:var(--r);background:var(--green-l);font-size:12px;font-weight:700;color:var(--green-d);transition:all .12s}
+.btn-green:hover{background:var(--green);color:#fff}
+.btn-green svg{width:11px;height:11px}
+.btn-danger{padding:7px 13px;border:1px solid #FECACA;border-radius:var(--r);background:var(--red-l);font-size:12px;font-weight:600;color:var(--red-d);transition:all .12s;margin-left:auto}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* ══════════════════════════════════════════════════
+   PANE 3 : 분석 (KR vs VN + 품질 + 생산성)
+══════════════════════════════════════════════════ */
+.ov-tabs-bar{display:flex;gap:2px;padding:12px 18px 0;background:#fff;border-bottom:1px solid var(--g200);flex-shrink:0}
+.ov-tab{padding:7px 14px;font-size:12px;font-weight:600;color:var(--g500);border:none;background:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .12s;white-space:nowrap}
+.ov-tab:hover{color:var(--g900)}
+.ov-tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.ov-body{flex:1;overflow-y:auto;padding:18px;background:var(--g50)}
+
+/* ══════════════════════════════════════════════════
+   PANE 4 : 루틴
+══════════════════════════════════════════════════ */
+.rt-body-wrap{flex:1;overflow-y:auto;padding:20px;background:var(--g50)}
+.rt-top-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:14px}
+.rt-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.rt-prog-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.rt-prog-bar{width:200px;height:6px;background:var(--g200);border-radius:99px;overflow:hidden}
+.rt-prog-fill{height:100%;background:var(--green);border-radius:99px;transition:width .4s}
+.rt-section{margin-bottom:20px}
+.rt-sec-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rt-sec-lbl{font-size:12px;font-weight:700;color:var(--g700)}
+.rt-sec-cnt{font-family:"Space Mono",monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--g100);color:var(--g500)}
+.rt-sec-cnt.all{background:var(--green-l);color:var(--green-d)}
+.rt-sec-line{flex:1;height:1px;background:var(--g200)}
+.rt-copy-btn{display:flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--g200);border-radius:var(--r);background:#fff;font-size:11px;color:var(--g500);cursor:pointer;transition:all .11s}
+.rt-copy-btn:hover{border-color:var(--blue);color:var(--blue)}
+.rt-copy-btn svg{width:11px;height:11px}
+.rt-list{background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);overflow:hidden}
+.rt-item{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--g100);transition:background .1s}
+.rt-item:last-child{border:none}
+.rt-item:hover{background:var(--g50)}
+.rt-item.done .rt-item-text{text-decoration:line-through;color:var(--g400)}
+.rt-chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--g300);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .14s}
+.rt-chk:hover{border-color:var(--green)}
+.rt-chk.on{background:var(--green);border-color:var(--green)}
+.rt-chk svg{width:10px;height:10px;color:#fff}
+.rt-item-body{flex:1;min-width:0}
+.rt-item-text{font-size:13px;font-weight:500;color:var(--g900)}
+.rt-item-meta{display:flex;align-items:center;gap:5px;margin-top:2px}
+.rt-item-who{font-size:10px;color:var(--g400)}
+.rt-del{width:22px;height:22px;border:none;border-radius:4px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--g300);transition:all .11s}
+.rt-del:hover{background:var(--red-l);color:var(--red-d)}
+.rt-del svg{width:10px;height:10px}
+
+/* ══════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════ */
+.mbg{position:fixed;inset:0;background:rgba(15,23,42,.36);backdrop-filter:blur(2px);z-index:400;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .17s}
+.mbg.on{opacity:1;pointer-events:all}
+.mbox{background:#fff;border-radius:var(--rlg);width:580px;max-width:95vw;max-height:92vh;overflow-y:auto;padding:22px;box-shadow:0 20px 64px rgba(15,23,42,.22);transform:translateY(8px) scale(.99);transition:transform .2s;border:1px solid var(--g200)}
+.mbg.on .mbox{transform:translateY(0) scale(1)}
+.mhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.mtitle{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.mclose{width:26px;height:26px;border-radius:var(--r);border:1px solid var(--g200);background:none;display:flex;align-items:center;justify-content:center;color:var(--g400);transition:all .12s}
+.mclose:hover{background:var(--g100);color:var(--g700)}
+.mclose svg{width:11px;height:11px}
+.fstack{display:flex;flex-direction:column;gap:11px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--g400)}
+.fl-req::after{content:" *";color:var(--red)}
+.fi,.fs,.fta{background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:8px 10px;font-size:12px;color:var(--g900);outline:none;transition:border-color .13s;width:100%}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.fi::placeholder,.fta::placeholder{color:var(--g400)}
+.fta{resize:vertical;min-height:56px}
+.fs{appearance:none}
+.fi-ro{background:var(--g100);color:var(--g500)}
+.sec-box{background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:12px}
+.sec-box-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g500);margin-bottom:9px}
+.mft{margin-top:18px;display:flex;justify-content:space-between;align-items:center}
+.mft-r{display:flex;gap:7px}
+/* rt modal */
+.rt-freq-row{display:flex;gap:5px}
+.rt-fq{flex:1;padding:6px;border:1.5px solid var(--g200);border-radius:var(--r);background:#fff;font-size:12px;font-weight:600;color:var(--g500);cursor:pointer;text-align:center;transition:all .11s}
+.rt-fq:hover{border-color:var(--blue-m);color:var(--blue)}
+.rt-fq.on{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
+
+/* TOAST */
+.toast{position:fixed;bottom:16px;right:16px;z-index:500;background:var(--g900);color:#fff;border-radius:var(--r);padding:10px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;box-shadow:0 8px 28px rgba(15,23,42,.22);transform:translateY(12px);opacity:0;transition:all .2s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+.toast svg{width:13px;height:13px;color:var(--green)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px;color:var(--g400);font-size:12px;gap:8px;text-align:center}
+.empty-state svg{width:36px;height:36px;opacity:.18}
+
+/* ─── SIDEBAR ICON BAR ─── */
+.sb{width:48px;flex-shrink:0;background:var(--bg-2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;overflow:hidden}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--g200);border-radius:99px}
+@media(max-width:900px){.tk-list-col{width:260px}.kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.tk-list-col{display:none}.hnav{display:none}.kpi-row{grid-template-columns:repeat(2,1fr)}.f2,.f3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════ -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="white"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="white" opacity=".5"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="white" opacity=".5"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="white"/></svg></div>
+    <span class="logo-text">OPS<b>biz</b></span>
+    <span class="logo-badge">MVP</span>
+  </div>
+  <div class="hdiv"></div>
+  <nav class="hnav">
+    <button class="hnav-btn on" onclick="goPane('dash',this)">🏠 대시보드</button>
+    <button class="hnav-btn" onclick="goPane('tickets',this)">🎫 티켓</button>
+    <button class="hnav-btn" onclick="goPane('analytics',this)">📊 분석</button>
+    <button class="hnav-btn" onclick="goPane('routine',this)">✅ 루틴</button>
+  </nav>
+  <div class="hright">
+    <button class="btn-new" onclick="openCreate()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+      티켓 생성
+    </button>
+  </div>
+</header>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <button class="si on"  title="대시보드" onclick="goPane('dash',null,this)"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 10L10 3L17 10V18H13V13H7V18H3Z"/></svg></button>
+  <button class="si" title="티켓"    onclick="goPane('tickets',null,this)"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="4" width="16" height="12" rx="2"/><line x1="6" y1="9" x2="14" y2="9"/><line x1="6" y1="12" x2="10" y2="12"/></svg><span class="si-badge" id="sb-open">0</span></button>
+  <button class="si" title="분석"    onclick="goPane('analytics',null,this)"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="2,15 7,8 11,11 15,5 18,8"/></svg></button>
+  <button class="si" title="루틴"    onclick="goPane('routine',null,this)"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><polyline points="10,6 10,10 13,12"/></svg></button>
+  <div class="sb-sep"></div>
+  <button class="si" title="장애만"  onclick="filterIncident()"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 2L18 16H2Z"/><line x1="10" y1="9" x2="10" y2="12"/><circle cx="10" cy="14.5" r=".6" fill="currentColor"/></svg><span class="si-badge" id="sb-inc" style="display:none">0</span></button>
+</div>
+
+<div class="main">
+
+<!-- ── PANE: 대시보드 ─────────────────────────────── -->
+<div class="pane on" id="pane-dash">
+  <div class="dash-body" id="dash-body"></div>
+</div>
+
+<!-- ── PANE: 티켓 ─────────────────────────────────── -->
+<div class="pane" id="pane-tickets">
+  <div class="tk-wrap">
+    <!-- 목록 -->
+    <div class="tk-list-col">
+      <div class="tk-list-hd">
+        <div class="tk-list-title-row">
+          <span class="tk-list-title">운영 티켓</span>
+          <span class="tk-cnt-badge" id="tk-cnt">0</span>
+        </div>
+        <div class="tk-filters">
+          <div class="tk-search">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
+            <input id="tk-q" placeholder="제목 · 담당자 검색..." oninput="renderList()">
+          </div>
+          <div class="f-chips" id="fchip-type">
+            <button class="fchip on" onclick="setF('type','all',this)">전체</button>
+            <button class="fchip" onclick="setF('type','routine',this)">🔄</button>
+            <button class="fchip" onclick="setF('type','maint',this)">🛠</button>
+            <button class="fchip" onclick="setF('type','enhance',this)">✨</button>
+            <button class="fchip" onclick="setF('type','bug',this)">🐛</button>
+            <button class="fchip" onclick="setF('type','incident',this)">🚨</button>
+          </div>
+          <div class="f-chips" id="fchip-team">
+            <button class="fchip on" onclick="setF('team','all',this)">전체 팀</button>
+            <button class="fchip" onclick="setF('team','KR',this)">🇰🇷 KR</button>
+            <button class="fchip" onclick="setF('team','VN',this)">🇻🇳 VN</button>
+          </div>
+          <div class="f-chips" id="fchip-qa">
+            <button class="fchip on" onclick="setF('qa','all',this)">전체 상태</button>
+            <button class="fchip" onclick="setF('qa','진행',this)">진행</button>
+            <button class="fchip" onclick="setF('qa','검수',this)">검수</button>
+            <button class="fchip" onclick="setF('qa','완료',this)">완료</button>
+          </div>
+        </div>
+      </div>
+      <div class="tk-items" id="tk-items"></div>
+    </div>
+    <!-- 상세 -->
+    <div class="tk-detail-col" id="tk-detail">
+      <div class="tk-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="7" y1="4" x2="7" y2="9"/></svg>
+        티켓을 선택하면 상세 내용이 표시됩니다
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PANE: 분석 ─────────────────────────────────── -->
+<div class="pane" id="pane-analytics">
+  <div class="ov-tabs-bar">
+    <button class="ov-tab on"  onclick="setAnTab('compare',this)">🇰🇷 vs 🇻🇳 비교</button>
+    <button class="ov-tab" onclick="setAnTab('quality',this)">🔍 품질 관리</button>
+    <button class="ov-tab" onclick="setAnTab('productivity',this)">⚡ 생산성</button>
+    <button class="ov-tab" onclick="setAnTab('members',this)">👥 담당자별</button>
+  </div>
+  <div class="ov-body" id="an-body"></div>
+</div>
+
+<!-- ── PANE: 루틴 ─────────────────────────────────── -->
+<div class="pane" id="pane-routine">
+  <div class="rt-body-wrap">
+    <div class="rt-top-hd">
+      <div>
+        <div class="rt-title">루틴 점검</div>
+        <div style="font-size:12px;color:var(--g400);margin-top:3px">루틴 업무는 티켓이 아닌 체크리스트로 관리합니다</div>
+        <div class="rt-prog-row">
+          <div class="rt-prog-bar"><div class="rt-prog-fill" id="rt-pf" style="width:0%"></div></div>
+          <span style="font-size:11px;font-weight:700;color:var(--green-d)" id="rt-pt">0 / 0</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="btn-ghost" onclick="resetRT()">초기화</button>
+        <button class="btn-new" onclick="openRtCreate()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+          항목 추가
+        </button>
+      </div>
+    </div>
+    <div id="rt-sections"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ TICKET MODAL ══════════════════════════════════ -->
+<div class="mbg" id="m-ticket" onclick="if(event.target.id==='m-ticket')cm('m-ticket')">
+<div class="mbox">
+  <div class="mhd">
+    <div class="mtitle" id="m-hd-title">티켓 생성</div>
+    <button class="mclose" onclick="cm('m-ticket')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button>
+  </div>
+  <div class="fstack">
+    <div class="fg"><label class="fl fl-req">제목</label><input class="fi" id="f-title" placeholder="작업 내용을 간략히 입력하세요"></div>
+    <div class="f3">
+      <div class="fg"><label class="fl">유형</label>
+        <select class="fs" id="f-type">
+          <option value="routine">🔄 Routine — 정기 점검/콘텐츠 교체</option>
+          <option value="maint">🛠 Maintenance — 유지보수 수정</option>
+          <option value="enhance" selected>✨ Enhancement — 기능 개선</option>
+          <option value="bug">🐛 Bug — 기능 오류</option>
+          <option value="incident">🚨 Incident — 서비스 장애</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">난이도</label>
+        <select class="fs" id="f-size">
+          <option value="small">Small</option>
+          <option value="medium" selected>Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">우선순위</label>
+        <select class="fs" id="f-priority">
+          <option value="high">🔴 높음</option>
+          <option value="mid" selected>🟡 중간</option>
+          <option value="low">🟢 낮음</option>
+        </select>
+      </div>
+    </div>
+    <div class="sec-box">
+      <div class="sec-box-lbl">담당 배정</div>
+      <div class="f3">
+        <div class="fg"><label class="fl">요청자 (KR)</label>
+          <select class="fs" id="f-requester">
+            <option value="">미지정</option>
+            <option value="이수진">이수진 — 기획</option>
+            <option value="김민지">김민지 — 디자인</option>
+            <option value="박소연">박소연 — 디자인</option>
+            <option value="최성호">최성호 — 개발</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">처리팀</label>
+          <select class="fs" id="f-team" onchange="syncAssignee()">
+            <option value="KR">🇰🇷 한국팀</option>
+            <option value="VN">🇻🇳 베트남팀</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">담당자</label>
+          <select class="fs" id="f-assignee"><option value="">미지정</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="sec-box">
+      <div class="sec-box-lbl">시간 기록 — 소요시간 자동 계산</div>
+      <div class="f3">
+        <div class="fg"><label class="fl">요청 시간</label><input class="fi" id="f-req-at" type="datetime-local"></div>
+        <div class="fg"><label class="fl">시작 시간</label><input class="fi" id="f-start-at" type="datetime-local"></div>
+        <div class="fg"><label class="fl">완료 시간</label><input class="fi" id="f-end-at" type="datetime-local"></div>
+      </div>
+      <div class="fg" style="margin-top:9px"><label class="fl">소요시간 (자동)</label><input class="fi fi-ro" id="f-duration" readonly placeholder="시작/완료 입력 시 자동 계산"></div>
+    </div>
+    <div class="f3">
+      <div class="fg"><label class="fl">QA 상태</label>
+        <select class="fs" id="f-qa">
+          <option value="신규">신규</option>
+          <option value="진행">진행</option>
+          <option value="검수">검수</option>
+          <option value="완료">완료</option>
+          <option value="보류">보류</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">수정 횟수</label><input class="fi" id="f-revisions" type="number" min="0" value="0"></div>
+      <div class="fg"><label class="fl">결과 평가</label>
+        <select class="fs" id="f-result">
+          <option value="">평가 전</option>
+          <option value="good">✅ Good</option>
+          <option value="revise">🔁 Revise</option>
+          <option value="fail">❌ Fail</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">작업 내용</label><textarea class="fta" id="f-desc" placeholder="수정 기준, 요구사항, Before/After 등 상세히 기술하세요 — 기준이 명확할수록 수정이 줄어듭니다"></textarea></div>
+    <div class="fg"><label class="fl">메모 / 특이사항</label><textarea class="fta" id="f-note" placeholder="지연 사유, 이슈, 피드백 등" style="min-height:44px"></textarea></div>
+  </div>
+  <div class="mft">
+    <div id="m-del-btn"></div>
+    <div class="mft-r">
+      <button class="btn-ghost" onclick="cm('m-ticket')">취소</button>
+      <button class="btn-blue" onclick="saveTicket()">저장</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ ROUTINE MODAL ══════════════════════════════════ -->
+<div class="mbg" id="m-routine" onclick="if(event.target.id==='m-routine')cm('m-routine')">
+<div class="mbox" style="width:420px">
+  <div class="mhd">
+    <div class="mtitle">루틴 항목 추가</div>
+    <button class="mclose" onclick="cm('m-routine')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button>
+  </div>
+  <div class="fstack">
+    <div class="fg"><label class="fl">주기</label>
+      <div class="rt-freq-row">
+        <button class="rt-fq on" onclick="setRtFreq('weekly',this)">주간</button>
+        <button class="rt-fq" onclick="setRtFreq('monthly',this)">월간</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl fl-req">항목명</label><input class="fi" id="rt-text" placeholder="예: 메인페이지 점검"></div>
+    <div class="f2">
+      <div class="fg"><label class="fl">KR 담당</label>
+        <select class="fs" id="rt-kr"><option value="">미지정</option><option>이수진</option><option>김민지</option><option>박소연</option><option>최성호</option></select>
+      </div>
+      <div class="fg"><label class="fl">VN 담당</label>
+        <select class="fs" id="rt-vn"><option value="">미지정</option><option>Nguyen Van A</option><option>Tran Thi B</option><option>Le Van C</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="mft"><div></div><div class="mft-r">
+    <button class="btn-ghost" onclick="cm('m-routine')">취소</button>
+    <button class="btn-blue" onclick="saveRtItem()">추가</button>
+  </div></div>
+</div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="2,8 6,12 14,4"/></svg><span id="toast-msg"></span></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// 팀 구성 (고정 · MVP 목표 기반)
+// ════════════════════════════════════════════════════════
+const KR = [
+  {name:"이수진", role:"기획",   color:"#6366F1", team:"KR"},
+  {name:"김민지", role:"디자인", color:"#EC4899", team:"KR"},
+  {name:"박소연", role:"디자인", color:"#F97316", team:"KR"},
+  {name:"최성호", role:"개발",   color:"#2563EB", team:"KR"},
+];
+const VN = [
+  {name:"Nguyen Van A", role:"핸들링", color:"#10B981", team:"VN"},
+  {name:"Tran Thi B",   role:"개발",   color:"#06B6D4", team:"VN"},
+  {name:"Le Van C",     role:"개발",   color:"#8B5CF6", team:"VN"},
+];
+const ALL = [...KR, ...VN];
+
+// ════════════════════════════════════════════════════════
+// 메타 정의
+// ════════════════════════════════════════════════════════
+const TYPE = {
+  routine: {label:"Routine",     sub:"정기 점검 / 콘텐츠 교체", cls:"tp-routine",  color:"#155E75", dot:"#06B6D4", icon:"🔄"},
+  maint:   {label:"Maintenance", sub:"유지보수 수정",            cls:"tp-maint",    color:"#1E40AF", dot:"#2563EB", icon:"🛠"},
+  enhance: {label:"Enhancement", sub:"기능 개선",                cls:"tp-enhance",  color:"#5B21B6", dot:"#8B5CF6", icon:"✨"},
+  bug:     {label:"Bug",         sub:"기능 오류",                cls:"tp-bug",      color:"#92400E", dot:"#F59E0B", icon:"🐛"},
+  incident:{label:"Incident",    sub:"서비스 장애",              cls:"tp-incident", color:"#B91C1C", dot:"#EF4444", icon:"🚨"},
+};
+
+const QA = {
+  "신규":{cls:"qa-open",    label:"신규",   step:0},
+  "진행":{cls:"qa-progress",label:"진행",   step:1},
+  "검수":{cls:"qa-review",  label:"검수",   step:2},
+  "완료":{cls:"qa-done",    label:"완료",   step:3},
+  "보류":{cls:"qa-hold",    label:"보류",   step:-1},
+};
+
+const RESULT = {good:{label:"Good",color:"#059669"},revise:{label:"Revise",color:"#B45309"},fail:{label:"Fail",color:"#B91C1C"}};
+const SIZE   = {small:{label:"Small",cls:"sz-s"},medium:{label:"Medium",cls:"sz-m"},large:{label:"Large",cls:"sz-l"}};
+
+// ════════════════════════════════════════════════════════
+// 유틸
+// ════════════════════════════════════════════════════════
+const AC=["#6366F1","#EC4899","#F97316","#2563EB","#10B981","#06B6D4","#8B5CF6","#F59E0B"];
+function ac(n){if(!n)return"#94A3B8";let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))&0xffff;return AC[h%AC.length];}
+function ini(n){if(!n)return"?";const p=n.trim().split(/\s+/);return p.length>1?(p[0][0]+p[1][0]).toUpperCase():n.slice(0,2).toUpperCase();}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtDt(s){if(!s)return"—";const d=new Date(s);return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
+function fmtDate(s){if(!s)return"—";const d=new Date(s);return`${d.getMonth()+1}/${d.getDate()}`;}
+function calcDur(s,e){if(!s||!e)return null;const m=Math.round((new Date(e)-new Date(s))/60000);return m>0?m:null;}
+function durStr(m){if(!m)return"—";if(m<60)return m+"분";const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
+function timeAgo(iso){const s=Math.round((Date.now()-new Date(iso))/1000);if(s<60)return"방금";if(s<3600)return Math.floor(s/60)+"분 전";if(s<86400)return Math.floor(s/3600)+"시간 전";return Math.floor(s/86400)+"일 전";}
+function toast(m){const e=document.getElementById("toast");document.getElementById("toast-msg").textContent=m;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),2400);}
+function cm(id){document.getElementById(id).classList.remove("on");}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){cm("m-ticket");cm("m-routine");}});
+
+// ════════════════════════════════════════════════════════
+// 샘플 데이터
+// ════════════════════════════════════════════════════════
+function genSample(){
+  const titles={
+    routine:["메인페이지 점검","배너 노출 확인","로그 오류 확인","API 상태 모니터링","주간 성과 리포트 작성","디자인 에셋 점검","DB 백업 확인"],
+    maint:  ["서버 로그 정리","캐시 초기화","파일 스토리지 정리","의존성 패키지 업데이트","SSL 갱신 확인","DB 인덱스 최적화"],
+    enhance:["메인 배너 문구 수정","버튼 컬러 변경","여백·마진 조정","폰트 사이즈 수정","아이콘 교체","링크 URL 업데이트","팝업 위치 수정","이미지 교체","CTA 문구 개선"],
+    bug:    ["로그인 500 에러","결제 버튼 무반응","모바일 이미지 깨짐","API 타임아웃","다크모드 텍스트 오류","앱 크래시 iOS17","장바구니 수량 버그"],
+    incident:["결제 서비스 전면 장애","로그인 API 중단","CDN 장애","배포 긴급 롤백","DB 커넥션 풀 소진"],
+  };
+  const qaList=["신규","진행","진행","검수","완료","완료","완료"];
+  const now=Date.now();
+  const data=[];
+  let idx=1;
+  const typeKeys=["routine","maint","enhance","enhance","bug","incident"];
+  for(const tp of typeKeys){
+    const n=tp==="incident"?4:tp==="routine"?5:7;
+    for(let i=0;i<n;i++){
+      const team=["KR","KR","VN","VN"][Math.floor(Math.random()*4)];
+      const members=team==="KR"?KR:VN;
+      const assignee=members[Math.floor(Math.random()*members.length)].name;
+      const requester=KR[Math.floor(Math.random()*KR.length)].name;
+      const size=["small","small","medium","medium","medium","large"][Math.floor(Math.random()*6)];
+      const qa=tp==="incident"?"진행":qaList[Math.floor(Math.random()*qaList.length)];
+      const daysAgo=Math.floor(Math.random()*28);
+      const reqAt=new Date(now-daysAgo*86400000-Math.floor(Math.random()*8)*3600000).toISOString().slice(0,16);
+      const startMin=Math.floor(Math.random()*120)+10;
+      const startAt=new Date(new Date(reqAt).getTime()+startMin*60000).toISOString().slice(0,16);
+      const durBase={small:[20,90],medium:[60,300],large:[180,720]}[size];
+      const dur=Math.floor(Math.random()*(durBase[1]-durBase[0]))+durBase[0];
+      const endAt=qa==="완료"?new Date(new Date(startAt).getTime()+dur*60000).toISOString().slice(0,16):null;
+      const duration_min=endAt?calcDur(startAt,endAt):null;
+      const rev=qa==="완료"||qa==="검수"?Math.floor(Math.random()*4):0;
+      const result=qa==="완료"?["good","good","good","revise","fail"][Math.floor(Math.random()*5)]:null;
+      const priority=tp==="incident"?"high":["high","mid","mid","mid","low"][Math.floor(Math.random()*5)];
+      const tArr=titles[tp];
+      data.push({
+        id:`TK-${String(idx).padStart(3,"0")}`,
+        title:tArr[Math.floor(Math.random()*tArr.length)],
+        type:tp, size, priority,
+        requester, team, assignee,
+        req_at:reqAt, start_at:startAt, end_at:endAt,
+        duration_min, revisions:rev, qa, result,
+        desc:"", note:"",
+        created_at:new Date(reqAt).toISOString(),
+      });
+      idx++;
+    }
+  }
+  return data;
+}
+
+// 스키마 버전 체크 — 필드 변경 시 자동 초기화
+const SCHEMA_VER = "v4";
+if(localStorage.getItem("opsbiz_schema") !== SCHEMA_VER){
+  localStorage.removeItem("opsbiz_mvp");
+  localStorage.removeItem("opsbiz_rt_mvp");
+  localStorage.setItem("opsbiz_schema", SCHEMA_VER);
+}
+
+let tickets = JSON.parse(localStorage.getItem("opsbiz_mvp")||"null") || genSample();
+let routines = JSON.parse(localStorage.getItem("opsbiz_rt_mvp")||"null") || {
+  weekly:[
+    {id:"w1",text:"메인페이지 점검",    kr:"최성호",vn:"Tran Thi B",   done:false},
+    {id:"w2",text:"배너 노출 확인",      kr:"김민지",vn:"",             done:false},
+    {id:"w3",text:"로그 오류 확인",      kr:"최성호",vn:"Le Van C",     done:false},
+    {id:"w4",text:"API 상태 확인",       kr:"최성호",vn:"Tran Thi B",   done:false},
+    {id:"w5",text:"주간 성과 리포트",    kr:"이수진",vn:"Nguyen Van A", done:false},
+    {id:"w6",text:"디자인 에셋 점검",    kr:"박소연",vn:"",             done:false},
+  ],
+  monthly:[
+    {id:"m1",text:"속도 점검",           kr:"최성호",vn:"Tran Thi B",   done:false},
+    {id:"m2",text:"결제 로그 확인",      kr:"최성호",vn:"Le Van C",     done:false},
+    {id:"m3",text:"콘텐츠 정리",         kr:"이수진",vn:"",             done:false},
+    {id:"m4",text:"보안 점검",           kr:"최성호",vn:"Le Van C",     done:false},
+    {id:"m5",text:"의존성 업데이트",     kr:"최성호",vn:"Tran Thi B",   done:false},
+  ],
+};
+
+let selId=null, curPane="dash", anTab="compare";
+let filters={type:"all",team:"all",qa:"all"};
+let editId=null, rtFreq="weekly";
+
+function save(){ localStorage.setItem("opsbiz_mvp", JSON.stringify(tickets)); }
+function saveRt(){ localStorage.setItem("opsbiz_rt_mvp", JSON.stringify(routines)); }
+
+// ════════════════════════════════════════════════════════
+// 네비게이션
+// ════════════════════════════════════════════════════════
+function goPane(id, navEl, sbEl){
+  curPane = id;
+  document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
+  document.getElementById("pane-"+id).classList.add("on");
+  document.querySelectorAll(".hnav-btn").forEach(b=>b.classList.remove("on"));
+  document.querySelectorAll(".si").forEach(b=>b.classList.remove("on"));
+  const ni={dash:0,tickets:1,analytics:2,routine:3};
+  const si_map={dash:0,tickets:1,analytics:2,routine:3};
+  if(ni[id]!=null) document.querySelectorAll(".hnav-btn")[ni[id]]?.classList.add("on");
+  if(si_map[id]!=null) document.querySelectorAll(".si")[si_map[id]]?.classList.add("on");
+  if(navEl) navEl.classList.add("on");
+  if(sbEl)  sbEl.classList.add("on");
+  if(id==="dash")      renderDash();
+  if(id==="tickets")   renderList();
+  if(id==="analytics") renderAnalytics();
+  if(id==="routine")   renderRt();
+}
+
+function setAnTab(tab,el){
+  anTab=tab;
+  document.querySelectorAll(".ov-tab").forEach(b=>b.classList.remove("on"));
+  if(el){el.classList.add("on");}
+  else{const order={compare:0,quality:1,productivity:2,members:3};const i=order[tab];if(i!=null){const tabs=document.querySelectorAll(".ov-tab");if(tabs[i])tabs[i].classList.add("on");}}
+  renderAnalytics();
+}
+
+function filterIncident(){
+  filters.type="incident";
+  document.querySelectorAll("#fchip-type .fchip").forEach(ch=>{
+    ch.classList.remove("on");
+    if(ch.textContent.trim().startsWith("🚨")) ch.classList.add("on");
+  });
+  goPane("tickets");
+}
+
+// ════════════════════════════════════════════════════════
+// 사이드바 배지
+// ════════════════════════════════════════════════════════
+function updateBadges(){
+  const open=tickets.filter(t=>t.qa!=="완료"&&t.qa!=="보류").length;
+  const inc=tickets.filter(t=>t.type==="incident"&&t.qa!=="완료").length;
+  document.getElementById("sb-open").textContent=open;
+  const incEl=document.getElementById("sb-inc");
+  incEl.style.display=inc>0?"flex":"none";
+  incEl.textContent=inc;
+}
+
+// ════════════════════════════════════════════════════════
+// ① 대시보드
+// ════════════════════════════════════════════════════════
+function renderDash(){
+  const el=document.getElementById("dash-body"); if(!el) return;
+
+  const tot=tickets.length;
+  const open=tickets.filter(t=>t.qa!=="완료"&&t.qa!=="보류");
+  const done=tickets.filter(t=>t.qa==="완료");
+  const inprog=tickets.filter(t=>t.qa==="진행");
+  const incidents=tickets.filter(t=>t.type==="incident"&&t.qa!=="완료");
+  const withDur=done.filter(t=>t.duration_min>0);
+  const avgDur=withDur.length?Math.round(withDur.reduce((s,t)=>s+t.duration_min,0)/withDur.length):0;
+  const avgRev=tot?Math.round(tickets.reduce((s,t)=>s+t.revisions,0)/tot*10)/10:0;
+  const rated=tickets.filter(t=>t.result);
+  const goodRate=rated.length?Math.round(rated.filter(t=>t.result==="good").length/rated.length*100):0;
+  const doneRate=tot?Math.round(done.length/tot*100):0;
+  const krT=tickets.filter(t=>t.team==="KR"), vnT=tickets.filter(t=>t.team==="VN");
+  const krDone=krT.filter(t=>t.qa==="완료"), vnDone=vnT.filter(t=>t.qa==="완료");
+
+  // 오늘
+  const todayDs=new Date().toISOString().split("T")[0];
+  const todayCr=tickets.filter(t=>t.req_at?.startsWith(todayDs)).length;
+  const todayDn=tickets.filter(t=>t.end_at?.startsWith(todayDs)).length;
+
+  // 7일 스파크
+  const spark=Array.from({length:7},(_,i)=>{
+    const d=new Date(Date.now()-(6-i)*86400000);
+    const ds=d.toISOString().split("T")[0];
+    return{day:["일","월","화","수","목","금","토"][d.getDay()],cr:tickets.filter(t=>t.req_at?.startsWith(ds)).length,dn:tickets.filter(t=>t.end_at?.startsWith(ds)).length};
+  });
+  const maxSp=Math.max(...spark.map(s=>Math.max(s.cr,s.dn)),1);
+
+  // 루틴 오늘
+  const rtW=routines.weekly||[], rtWDone=rtW.filter(i=>i.done).length;
+
+  // 최근 활동
+  const recentAct=[...tickets].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,7);
+
+  // QA 도넛
+  const qaSegs=[
+    {q:"진행",c:"#2563EB"},{q:"신규",c:"#94A3B8"},{q:"검수",c:"#F59E0B"},
+    {q:"완료",c:"#10B981"},{q:"보류",c:"#E2E8F0"},
+  ].map(s=>({...s,cnt:tickets.filter(t=>t.qa===s.q).length}));
+  const qaTotal=qaSegs.reduce((a,b)=>a+b.cnt,0)||1;
+  const R=30,CI=2*Math.PI*R; let off=0;
+  const donutPaths=qaSegs.map(s=>{const p=s.cnt/qaTotal,d=CI*p,g=CI-d;const e=`<circle cx="40" cy="40" r="${R}" fill="none" stroke="${s.c}" stroke-width="10" stroke-dasharray="${d.toFixed(2)} ${g.toFixed(2)}" stroke-dashoffset="${(CI*.25-CI*off).toFixed(2)}" transform="rotate(-90 40 40)"/>`;off+=p;return e;}).join("");
+
+  // KR vs VN 요약
+  const krWD=krT.filter(t=>t.duration_min>0), vnWD=vnT.filter(t=>t.duration_min>0);
+  const krAvg=krWD.length?Math.round(krWD.reduce((s,t)=>s+t.duration_min,0)/krWD.length):0;
+  const vnAvg=vnWD.length?Math.round(vnWD.reduce((s,t)=>s+t.duration_min,0)/vnWD.length):0;
+  const krRevAvg=krT.length?Math.round(krT.reduce((s,t)=>s+t.revisions,0)/krT.length*10)/10:0;
+  const vnRevAvg=vnT.length?Math.round(vnT.reduce((s,t)=>s+t.revisions,0)/vnT.length*10)/10:0;
+
+  el.innerHTML=`
+  ${incidents.length>0?`
+  <div class="incident-banner" onclick="filterIncident()">
+    <div class="ib-icon">🚨</div>
+    <div class="ib-text">
+      <div class="ib-title">장애 대응 중 — 즉시 확인이 필요합니다</div>
+      <div class="ib-sub">${incidents.slice(0,2).map(t=>t.title).join(" · ")}${incidents.length>2?` 외 ${incidents.length-2}건`:""}</div>
+    </div>
+    <div class="ib-count">${incidents.length}</div>
+  </div>`:""}
+
+  <!-- KPI 5 -->
+  <div class="kpi-row">
+    ${[
+      {lbl:"오픈 티켓",   link:"goPane('tickets')", num:open.length,      sub:`진행 ${inprog.length} · 신규 ${tickets.filter(t=>t.qa==="신규").length}`, ic:"#EFF6FF",cc:"#2563EB",
+        icon:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="2"/><line x1="5" y1="7" x2="11" y2="7"/><line x1="5" y1="10" x2="8" y2="10"/></svg>`},
+      {lbl:"완료율",      link:"goPane('analytics');setAnTab('compare')", num:doneRate+"%",      sub:`${done.length}건 / 전체 ${tot}건`, ic:"#ECFDF5",cc:"#10B981",
+        icon:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8l2 2 3-3"/></svg>`},
+      {lbl:"Good율",      link:"goPane('analytics');setAnTab('quality')", num:goodRate+"%",      sub:`${rated.length}건 평가 기준`, ic:goodRate>=75?"#ECFDF5":"#FFFBEB",cc:goodRate>=75?"#10B981":"#B45309",
+        icon:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l3 3 7-7"/></svg>`},
+      {lbl:"평균 소요시간",link:"goPane('analytics');setAnTab('productivity')", num:durStr(avgDur),   sub:"완료 기준 자동 계산", ic:"#F5F3FF",cc:"#5B21B6",
+        icon:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><polyline points="8,5 8,8 10,10"/></svg>`},
+      {lbl:"평균 수정횟수",link:"goPane('analytics');setAnTab('quality')", num:avgRev+"회",      sub:avgRev>2?"⚠ 기준 초과":avgRev>1?"주의 필요":"양호", ic:avgRev>2?"#FEF2F2":avgRev>1?"#FFFBEB":"#ECFDF5",cc:avgRev>2?"#B91C1C":avgRev>1?"#B45309":"#059669",
+        icon:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="2,12 5,7 8,10 11,5 14,8"/></svg>`},
+    ].map(k=>`
+    <div class="kpi" onclick="${k.link}" style="cursor:pointer">
+      <div class="kpi-stripe" style="background:${k.cc}"></div>
+      <div class="kpi-icon" style="background:${k.ic};color:${k.cc}">${k.icon}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-num" style="color:${k.cc}">${k.num}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join("")}
+  </div>
+
+  <!-- 메인 그리드 -->
+  <div class="dg dg21">
+    <!-- 왼쪽 -->
+    <div style="display:flex;flex-direction:column;gap:13px">
+
+      <!-- 7일 현황 + QA 링 -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:13px">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">7일 티켓 현황</span>
+            <div style="display:flex;gap:10px">
+              <span style="font-size:10px;color:var(--g500);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#93C5FD;display:inline-block"></span>접수</span>
+              <span style="font-size:10px;color:var(--g500);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#10B981;display:inline-block"></span>완료</span>
+            </div>
+          </div>
+          <div class="bar-chart">
+            ${spark.map(s=>`<div class="bc-col">
+              <div class="bc-bars">
+                <div class="bc-b" style="height:${s.cr/maxSp*50}px;background:#93C5FD" title="접수 ${s.cr}"></div>
+                <div class="bc-b" style="height:${s.dn/maxSp*50}px;background:#10B981" title="완료 ${s.dn}"></div>
+              </div>
+              <div class="bc-lbl">${s.day}</div>
+            </div>`).join("")}
+          </div>
+          <div style="display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--g100)">
+            <div><div style="font-size:9px;color:var(--g400);text-transform:uppercase;letter-spacing:.05em">오늘 접수</div><div style="font-family:'Space Mono',monospace;font-size:18px;font-weight:800;color:#2563EB">${todayCr}</div></div>
+            <div><div style="font-size:9px;color:var(--g400);text-transform:uppercase;letter-spacing:.05em">오늘 완료</div><div style="font-family:'Space Mono',monospace;font-size:18px;font-weight:800;color:#10B981">${todayDn}</div></div>
+            <div><div style="font-size:9px;color:var(--g400);text-transform:uppercase;letter-spacing:.05em">전체 완료율</div><div style="font-family:'Space Mono',monospace;font-size:18px;font-weight:800;color:${doneRate>=70?"#059669":"#B45309"}">${doneRate}%</div></div>
+          </div>
+        </div>
+        <div class="card" style="min-width:128px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px">
+          <div class="card-title">QA 상태</div>
+          <div class="ring-wrap">
+            <svg width="80" height="80" viewBox="0 0 80 80">${donutPaths}</svg>
+            <div class="ring-center">
+              <div class="ring-val" style="font-size:15px">${doneRate}%</div>
+              <div class="ring-lbl">완료율</div>
+            </div>
+          </div>
+          <div style="width:100%">
+            ${qaSegs.filter(s=>s.cnt>0).map(s=>`<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">
+              <span style="display:flex;align-items:center;gap:4px;color:var(--g600)"><span style="width:7px;height:7px;border-radius:2px;background:${s.c};display:inline-block"></span>${s.q}</span>
+              <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--g900)">${s.cnt}</span>
+            </div>`).join("")}
+          </div>
+        </div>
+      </div>
+
+      <!-- 진행중 티켓 목록 -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">진행 중 <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;background:var(--blue-m);color:var(--blue);padding:1px 6px;border-radius:99px;margin-left:4px">${inprog.length}</span></span>
+          <button class="card-link" onclick="goPane('tickets')">전체 보기 →</button>
+        </div>
+        ${inprog.length?inprog.slice(0,6).map(t=>{
+          const tp=TYPE[t.type]||TYPE.enhance;
+          const m=ALL.find(m=>m.name===(t.assignee||t.assignee_name));
+          return`<div class="mini-tk" onclick="goPane('tickets');selectTk('${t.id}')">
+            <span class="mini-id">${t.id}</span>
+            <span class="mini-title">${esc(t.title)}</span>
+            <div class="mini-right">
+              <span class="bdg ${tp.cls}" style="font-size:9px">${tp.icon} ${tp.label}</span>
+              <span class="bdg ${t.team==="KR"?"tm-kr":"tm-vn"}" style="font-size:9px">${t.team}</span>
+              ${m?`<div class="av" style="background:${m.color};width:16px;height:16px;font-size:6px">${t.team==="KR"?m.name[0]:ini(m.name)}</div>`:""}
+            </div>
+          </div>`;
+        }).join(""):`<div style="padding:16px;text-align:center;color:var(--g400);font-size:12px">진행 중인 티켓 없음 ✓</div>`}
+      </div>
+
+      <!-- KR vs VN 핵심 비교 -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">🇰🇷 한국팀 vs 🇻🇳 베트남팀</span>
+          <button class="card-link" onclick="goPane('analytics');setAnTab('compare')">상세 분석 →</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${[
+            {flag:"🇰🇷",name:"한국팀",color:"#2563EB",bg:"#EFF6FF",t:krT,d:krDone,avg:krAvg,rev:krRevAvg,members:KR},
+            {flag:"🇻🇳",name:"베트남팀",color:"#10B981",bg:"#ECFDF5",t:vnT,d:vnDone,avg:vnAvg,rev:vnRevAvg,members:VN},
+          ].map(tm=>`
+          <div class="team-box" style="background:${tm.bg};border-color:${tm.color}25">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+              <span style="font-size:18px">${tm.flag}</span>
+              <div><div style="font-size:12px;font-weight:800;color:${tm.color}">${tm.name}</div>
+              <div style="font-size:10px;color:var(--g400)">${tm.name==="한국팀"?"기획·디자인·개발":"핸들링·개발"}</div></div>
+            </div>
+            <div class="team-stat-row"><span class="tsr-lbl">총 담당</span><span class="tsr-val">${tm.t.length}건</span></div>
+            <div class="team-stat-row"><span class="tsr-lbl">완료</span><span class="tsr-val">${tm.d.length}건</span></div>
+            <div class="team-stat-row"><span class="tsr-lbl">평균 소요</span><span class="tsr-val">${durStr(tm.avg)}</span></div>
+            <div class="team-stat-row"><span class="tsr-lbl">평균 수정</span><span class="tsr-val" style="color:${tm.rev>2?"var(--red-d)":tm.rev>1?"var(--amber-d)":"var(--g900)"}">${tm.rev}회</span></div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid ${tm.color}20">
+              ${tm.members.map(m=>`<div style="display:flex;align-items:center;gap:3px;padding:2px 6px 2px 3px;border-radius:99px;background:rgba(255,255,255,.7);border:1px solid ${tm.color}30;font-size:10px;font-weight:600;color:${tm.color}"><div class="av" style="background:${m.color};width:14px;height:14px;font-size:5px">${tm.name==="한국팀"?m.name[0]:ini(m.name)}</div>${m.name.split(" ")[0]}</div>`).join("")}
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 -->
+    <div style="display:flex;flex-direction:column;gap:13px">
+
+      <!-- 빠른 실행 -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">빠른 실행</span></div>
+        <div class="quick-grid">
+          <button class="quick-btn" onclick="openCreate()">
+            <div class="quick-icon" style="background:#EFF6FF">🎫</div>
+            <div><div class="quick-t">티켓 생성</div><div class="quick-s">새 작업 등록</div></div>
+          </button>
+          <button class="quick-btn" onclick="goPane('tickets')">
+            <div class="quick-icon" style="background:#F5F3FF">📋</div>
+            <div><div class="quick-t">티켓 목록</div><div class="quick-s">전체 조회·관리</div></div>
+          </button>
+          <button class="quick-btn" onclick="goPane('analytics');setAnTab('compare')">
+            <div class="quick-icon" style="background:#ECFEFF">⚖️</div>
+            <div><div class="quick-t">KR vs VN</div><div class="quick-s">팀 비교 분석</div></div>
+          </button>
+          <button class="quick-btn" onclick="goPane('analytics');setAnTab('quality')">
+            <div class="quick-icon" style="background:#FEF3C7">🔍</div>
+            <div><div class="quick-t">품질 분석</div><div class="quick-s">실수·장애·지연</div></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 루틴 오늘 -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">오늘 루틴</span>
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="font-size:11px;color:var(--g400)">${rtWDone}/${rtW.length}</span>
+            <div style="width:56px;height:5px;background:var(--g100);border-radius:99px;overflow:hidden"><div style="height:100%;background:var(--green);border-radius:99px;width:${rtW.length?Math.round(rtWDone/rtW.length*100):0}%"></div></div>
+          </div>
+        </div>
+        ${rtW.slice(0,5).map(r=>`<div class="rt-mini-row">
+          <div class="rt-chk-mini" style="background:${r.done?"var(--green-l)":"var(--g100)"};cursor:pointer" onclick="quickToggleRt('weekly','${r.id}')">
+            ${r.done?`<svg viewBox="0 0 10 10" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><polyline points="2,5 4,7 8,3"/></svg>`:`<div style="width:6px;height:6px;border-radius:50%;background:var(--g300)"></div>`}
+          </div>
+          <span class="rt-mini-text${r.done?" done":""}">${esc(r.text)}</span>
+          ${r.kr?`<span style="font-size:10px;color:var(--g400)">${r.kr.split(" ")[0]}</span>`:""}
+        </div>`).join("")}
+        <button style="width:100%;margin-top:8px;padding:5px;border:1px solid var(--g200);border-radius:var(--r);background:none;font-size:11px;font-weight:600;color:var(--g500);cursor:pointer;transition:all .12s" onclick="goPane('routine')" onmouseover="this.style.color='var(--blue)';this.style.borderColor='var(--blue)'" onmouseout="this.style.color='var(--g500)';this.style.borderColor='var(--g200)'">루틴 전체 관리 →</button>
+      </div>
+
+      <!-- 최근 활동 -->
+      <div class="card" style="flex:1">
+        <div class="card-hd">
+          <span class="card-title">최근 활동</span>
+          <button class="card-link" onclick="goPane('tickets')">전체 →</button>
+        </div>
+        ${recentAct.map(t=>{
+          const tp=TYPE[t.type]||TYPE.enhance;
+          const qm=QA[t.qa]||QA["신규"];
+          return`<div class="act-row" onclick="goPane('tickets');selectTk('${t.id}')">
+            <div class="act-dot" style="background:${tp.dot}"></div>
+            <div class="act-body">
+              <div class="act-title">${esc(t.title)}</div>
+              <div class="act-meta">
+                <span class="bdg ${qm.cls}" style="font-size:9px">${qm.label}</span>
+                <span class="bdg ${tp.cls}" style="font-size:9px">${tp.icon} ${tp.label}</span>
+              </div>
+            </div>
+            <div class="act-time">${timeAgo(t.created_at)}</div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ② 티켓 목록 (이메일 UI)
+// ════════════════════════════════════════════════════════
+function setF(key,val,el){
+  filters[key]=val;
+  document.querySelectorAll(`#fchip-${key} .fchip`).forEach(c=>c.classList.remove("on"));
+  el?.classList.add("on");
+  renderList();
+}
+
+function renderList(){
+  const q=(document.getElementById("tk-q")||{}).value?.trim().toLowerCase()||"";
+  const list=tickets.filter(t=>{
+    if(filters.type!=="all"&&t.type!==filters.type)return false;
+    if(filters.team!=="all"&&t.team!==filters.team)return false;
+    if(filters.qa!=="all"&&t.qa!==filters.qa)return false;
+    if(q&&!t.title.toLowerCase().includes(q)&&!(t.assignee||"").toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>{
+    if(a.type==="incident"&&b.type!=="incident")return -1;
+    if(b.type==="incident"&&a.type!=="incident")return 1;
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+
+  document.getElementById("tk-cnt").textContent=list.length;
+  updateBadges();
+
+  document.getElementById("tk-items").innerHTML=list.length?list.map(t=>{
+    const tp=TYPE[t.type]||TYPE.enhance;
+    const qm=QA[t.qa]||QA["신규"];
+    const m=ALL.find(m=>m.name===(t.assignee||t.assignee_name));
+    return`<div class="tki${selId===t.id?" on":""}${t.type==="incident"?" incident-item":""}" onclick="selectTk('${t.id}')">
+      <div class="tki-top">
+        <span class="tki-id">${t.id}</span>
+        <span class="bdg ${qm.cls}">${qm.label}</span>
+      </div>
+      <div class="tki-title">${esc(t.title)}</div>
+      <div class="tki-meta">
+        <span class="bdg ${tp.cls}" style="font-size:9px">${tp.icon} ${tp.label}</span>
+        <span class="bdg ${t.team==="KR"?"tm-kr":"tm-vn"}" style="font-size:9px">${t.team}</span>
+        ${m?`<div class="av" style="background:${m.color};width:15px;height:15px;font-size:6px">${t.team==="KR"?m.name[0]:ini(m.name)}</div>`:""}
+        ${t.duration_min?`<span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--g400)">${durStr(t.duration_min)}</span>`:""}
+        ${t.revisions>0?`<span style="font-size:9px;color:var(--red-d);font-weight:700">↩${t.revisions}</span>`:""}
+      </div>
+    </div>`;
+  }).join(""):`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>티켓이 없습니다</div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ③ 티켓 상세
+// ════════════════════════════════════════════════════════
+function selectTk(id){ selId=id; renderList(); renderDetail(id); }
+
+function renderDetail(id){
+  const t=tickets.find(t=>t.id===id);
+  if(!t)return;
+  const tp=TYPE[t.type]||TYPE.enhance;
+  const qm=QA[t.qa]||QA["신규"];
+  const m=ALL.find(m=>m.name===t.assignee);
+  const req=KR.find(m=>m.name===t.requester);
+  const dur=t.duration_min||calcDur(t.start_at,t.end_at);
+  const res=t.result?RESULT[t.result]:null;
+
+  document.getElementById("tk-detail").innerHTML=`
+  <div style="flex:1;overflow-y:auto">
+  <div class="td-body">
+    <!-- 헤더 -->
+    <div class="td-id-row">
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--g400);font-weight:700">${t.id}</span>
+      <span class="bdg ${tp.cls}">${tp.icon} ${tp.label}</span>
+      <span style="font-size:11px;color:var(--g400)">${tp.sub}</span>
+    </div>
+    <div class="td-title">${esc(t.title)}</div>
+    <div class="td-badges">
+      <span class="bdg ${qm.cls}">${qm.label}</span>
+      <span class="bdg ${t.team==="KR"?"tm-kr":"tm-vn"}">${t.team==="KR"?"🇰🇷 한국팀":"🇻🇳 베트남팀"}</span>
+      <span class="bdg ${SIZE[t.size]?.cls||"sz-m"}">${SIZE[t.size]?.label||"Medium"}</span>
+      <span class="bdg" style="background:${t.priority==="high"?"#FEF2F2":t.priority==="mid"?"#FFFBEB":"#ECFDF5"};color:${t.priority==="high"?"#B91C1C":t.priority==="mid"?"#B45309":"#059669"}">${t.priority==="high"?"🔴 높음":t.priority==="mid"?"🟡 중간":"🟢 낮음"}</span>
+      ${res?`<span class="bdg" style="background:${res.color}15;color:${res.color};border:1px solid ${res.color}30">${t.result==="good"?"✅":t.result==="revise"?"🔁":"❌"} ${res.label}</span>`:""}
+    </div>
+
+    <!-- QA 상태 변경 -->
+    <div class="td-sec">
+      <div class="td-sec-title">QA 상태</div>
+      <div class="qa-steps">
+        ${["신규","진행","검수","완료","보류"].map(q=>`<button class="qa-step${t.qa===q?" qa-on":""}" onclick="changeQA('${t.id}','${q}')">${QA[q]?.label||q}</button>`).join("")}
+      </div>
+    </div>
+
+    <!-- 담당 배정 -->
+    <div class="td-sec">
+      <div class="td-sec-title">담당 배정</div>
+      <div class="td-grid2">
+        <div class="td-field">
+          <div class="td-fl">요청자 (KR)</div>
+          <div class="td-fv">${req?`<div class="av" style="background:${req.color};width:18px;height:18px;font-size:7px">${req.name[0]}</div>`:""}${esc(t.requester)||"미지정"}</div>
+        </div>
+        <div class="td-field">
+          <div class="td-fl">처리팀 / 담당자</div>
+          <div class="td-fv">
+            <span class="bdg ${t.team==="KR"?"tm-kr":"tm-vn"}">${t.team}</span>
+            ${m?`<div class="av" style="background:${m.color};width:18px;height:18px;font-size:7px">${t.team==="KR"?m.name[0]:ini(m.name)}</div><span>${esc(m.name)}</span><span style="font-size:10px;color:var(--g400)">${m.role}</span>`:"미지정"}
+          </div>
+        </div>
+        <div class="td-field">
+          <div class="td-fl">수정 횟수</div>
+          <div class="td-fv td-fv-mono" style="color:${t.revisions>2?"var(--red-d)":t.revisions>0?"var(--amber-d)":"var(--g500)"}">${t.revisions}회</div>
+        </div>
+        <div class="td-field">
+          <div class="td-fl">결과 평가</div>
+          <div class="td-fv">${res?`<span style="font-weight:700;color:${res.color}">${t.result==="good"?"✅":t.result==="revise"?"🔁":"❌"} ${res.label}</span>`:`<span style="color:var(--g400)">평가 전</span>`}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 시간 기록 & 소요시간 -->
+    <div class="td-sec">
+      <div class="td-sec-title">시간 기록</div>
+      <div class="td-grid3" style="margin-bottom:12px">
+        <div class="td-field"><div class="td-fl">요청 시간</div><div class="td-fv" style="font-size:12px">${fmtDt(t.req_at)}</div></div>
+        <div class="td-field"><div class="td-fl">시작 시간</div><div class="td-fv" style="font-size:12px">${fmtDt(t.start_at)}</div></div>
+        <div class="td-field"><div class="td-fl">완료 시간</div><div class="td-fv" style="font-size:12px">${fmtDt(t.end_at)}</div></div>
+      </div>
+      <div class="duration-box">
+        <div>
+          <div style="font-size:10px;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">소요시간</div>
+          <div class="dur-big" style="color:${t.team==="KR"?"#2563EB":"#10B981"}">${durStr(dur)}</div>
+          <div class="dur-lbl">${dur?"시작 → 완료 자동 계산":"완료 시간 미입력"}</div>
+        </div>
+        ${dur?`<span class="dur-speed ${dur<=60?"speed-fast":dur<=180?"speed-mid":"speed-slow"}">${dur<=60?"⚡ 빠름":dur<=180?"🔶 보통":"🐢 느림"}</span>`:""}
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:10px;color:var(--g400);margin-bottom:2px">요청 접수 → 시작</div>
+          <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--g700)">${durStr(calcDur(t.req_at,t.start_at))}</div>
+        </div>
+      </div>
+    </div>
+
+    ${t.desc||t.note?`<div class="td-sec">
+      <div class="td-sec-title">작업 내용</div>
+      ${t.desc?`<div class="td-desc">${esc(t.desc)}</div>`:""}
+      ${t.note?`<div class="td-note">📌 ${esc(t.note)}</div>`:""}
+    </div>`:""}
+  </div>
+  </div>
+  <div class="td-actions">
+    ${t.qa!=="완료"?`<button class="btn-green" onclick="quickDone('${t.id}')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="2,8 6,12 14,4"/></svg>완료 처리</button>`:"<div></div>"}
+    <button class="btn-ghost" onclick="openEdit('${t.id}')">✏️ 수정</button>
+    <button class="btn-blue" onclick="openCreate()">+ 새 티켓</button>
+    <button class="btn-danger" onclick="deleteTk('${t.id}')">삭제</button>
+  </div>`;
+}
+
+function changeQA(id,qa){
+  const t=tickets.find(t=>t.id===id); if(!t)return;
+  t.qa=qa;
+  if(qa==="완료"&&!t.end_at){t.end_at=new Date().toISOString().slice(0,16);t.duration_min=calcDur(t.start_at,t.end_at);}
+  save(); renderList(); renderDetail(id); updateBadges();
+  toast(`QA → ${qa} ✓`);
+}
+function quickDone(id){ changeQA(id,"완료"); }
+function deleteTk(id){
+  if(!confirm("삭제할까요?"))return;
+  tickets=tickets.filter(t=>t.id!==id); selId=null; save(); renderList(); updateBadges();
+  document.getElementById("tk-detail").innerHTML=`<div class="tk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>삭제됐습니다</div>`;
+  toast("삭제됐습니다");
+}
+
+// ════════════════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════════════════
+function syncAssignee(){
+  const team=document.getElementById("f-team").value;
+  const sel=document.getElementById("f-assignee");
+  const members=team==="KR"?KR:VN;
+  sel.innerHTML=`<option value="">미지정</option>`+members.map(m=>`<option value="${m.name}">${m.name} (${m.role})</option>`).join("");
+}
+function calcDurDisplay(){
+  const s=document.getElementById("f-start-at").value, e=document.getElementById("f-end-at").value;
+  const d=calcDur(s,e);
+  document.getElementById("f-duration").value=d?durStr(d):"시작/완료 입력 시 자동 계산";
+}
+document.getElementById("f-start-at").addEventListener("change",calcDurDisplay);
+document.getElementById("f-end-at").addEventListener("change",calcDurDisplay);
+
+function openCreate(){
+  editId=null;
+  document.getElementById("m-hd-title").textContent="티켓 생성";
+  ["f-title","f-desc","f-note"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-type").value="enhance";
+  document.getElementById("f-size").value="medium";
+  document.getElementById("f-priority").value="mid";
+  document.getElementById("f-requester").value="";
+  document.getElementById("f-team").value="KR";
+  syncAssignee();
+  document.getElementById("f-assignee").value="";
+  document.getElementById("f-req-at").value=new Date().toISOString().slice(0,16);
+  ["f-start-at","f-end-at","f-duration"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-qa").value="신규";
+  document.getElementById("f-revisions").value="0";
+  document.getElementById("f-result").value="";
+  document.getElementById("m-del-btn").innerHTML="";
+  document.getElementById("m-ticket").classList.add("on");
+}
+
+function openEdit(id){
+  const t=tickets.find(t=>t.id===id); if(!t)return;
+  editId=id;
+  document.getElementById("m-hd-title").textContent="티켓 수정";
+  document.getElementById("f-title").value=t.title||"";
+  document.getElementById("f-type").value=t.type||"enhance";
+  document.getElementById("f-size").value=t.size||"medium";
+  document.getElementById("f-priority").value=t.priority||"mid";
+  document.getElementById("f-requester").value=t.requester||"";
+  document.getElementById("f-team").value=t.team||"KR";
+  syncAssignee();
+  document.getElementById("f-assignee").value=t.assignee||"";
+  document.getElementById("f-req-at").value=t.req_at||"";
+  document.getElementById("f-start-at").value=t.start_at||"";
+  document.getElementById("f-end-at").value=t.end_at||"";
+  document.getElementById("f-qa").value=t.qa||"신규";
+  document.getElementById("f-revisions").value=t.revisions||0;
+  document.getElementById("f-result").value=t.result||"";
+  document.getElementById("f-desc").value=t.desc||"";
+  document.getElementById("f-note").value=t.note||"";
+  document.getElementById("m-del-btn").innerHTML=`<button class="btn-danger" onclick="deleteTk('${id}');cm('m-ticket')">삭제</button>`;
+  calcDurDisplay();
+  document.getElementById("m-ticket").classList.add("on");
+}
+
+function saveTicket(){
+  const title=document.getElementById("f-title").value.trim();
+  if(!title){document.getElementById("f-title").focus();return;}
+  const s=document.getElementById("f-start-at").value, e=document.getElementById("f-end-at").value;
+  const data={
+    title, type:document.getElementById("f-type").value,
+    size:document.getElementById("f-size").value,
+    priority:document.getElementById("f-priority").value,
+    requester:document.getElementById("f-requester").value,
+    team:document.getElementById("f-team").value,
+    assignee:document.getElementById("f-assignee").value,
+    req_at:document.getElementById("f-req-at").value,
+    start_at:s||null, end_at:e||null,
+    duration_min:calcDur(s,e),
+    qa:document.getElementById("f-qa").value,
+    revisions:parseInt(document.getElementById("f-revisions").value)||0,
+    result:document.getElementById("f-result").value||null,
+    desc:document.getElementById("f-desc").value.trim(),
+    note:document.getElementById("f-note").value.trim(),
+  };
+  if(editId){
+    const i=tickets.findIndex(t=>t.id===editId);
+    if(i>-1)tickets[i]={...tickets[i],...data};
+    toast("수정됐습니다 ✓"); selId=editId;
+  }else{
+    const nid=`TK-${String(tickets.length+1).padStart(3,"0")}`;
+    tickets.unshift({id:nid,created_at:new Date().toISOString(),...data});
+    toast("티켓이 생성됐습니다 ✓"); selId=nid;
+  }
+  save(); cm("m-ticket"); renderList(); updateBadges();
+  if(selId) renderDetail(selId);
+}
+
+// ════════════════════════════════════════════════════════
+// ④ 분석 — 4개 서브탭 (모두 티켓 데이터에서 자동 계산)
+// ════════════════════════════════════════════════════════
+function renderAnalytics(){
+  const fn={compare:buildCompare,quality:buildQuality,productivity:buildProductivity,members:buildMembers};
+  const el=document.getElementById("an-body"); if(!el)return;
+  el.innerHTML=(fn[anTab]||buildCompare)();
+}
+
+// ── 팀 통계 헬퍼 ──
+function tStats(team){
+  const t=tickets.filter(x=>x.team===team);
+  const d=t.filter(x=>x.qa==="완료");
+  const wd=d.filter(x=>x.duration_min>0);
+  const rated=d.filter(x=>x.result);
+  return{
+    total:t.length, done:d.length,
+    doneRate:t.length?Math.round(d.length/t.length*100):0,
+    avgDur:wd.length?Math.round(wd.reduce((s,x)=>s+x.duration_min,0)/wd.length):0,
+    avgRev:t.length?Math.round(t.reduce((s,x)=>s+x.revisions,0)/t.length*10)/10:0,
+    goodRate:rated.length?Math.round(rated.filter(x=>x.result==="good").length/rated.length*100):0,
+    incDone:t.filter(x=>x.type==="incident"&&x.qa==="완료").length,
+    byType:Object.keys(TYPE).map(k=>({k,cnt:t.filter(x=>x.type===k).length})),
+  };
+}
+function grade(s){
+  const sc=s.doneRate*0.35+Math.max(0,100-s.avgRev*20)*0.35+(s.avgDur>0?Math.max(0,100-s.avgDur/3)*0.3:0);
+  return sc>=82?"A":sc>=65?"B":sc>=48?"C":"D";
+}
+function kbox(lbl,num,sub,cc,link=""){
+  return`<div style="background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);padding:14px 15px;position:relative;overflow:hidden;cursor:${link?'pointer':'default'}" onclick="${link}">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cc};border-radius:var(--rlg) var(--rlg) 0 0"></div>
+    <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--g400);margin-bottom:3px">${lbl}</div>
+    <div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:${cc};line-height:1;margin-bottom:4px">${num}</div>
+    <div style="font-size:11px;color:var(--g500)">${sub}</div>
+  </div>`;
+}
+
+// ── KR vs VN 비교 ──
+function buildCompare(){
+  const kr=tStats("KR"), vn=tStats("VN");
+  function cmp(kv,vv,hi=true){
+    const kw=hi?kv>vv:kv<vv, vw=hi?vv>kv:vv<kv;
+    return{k:`<span class="${kw?"win-kr":""}">${kv}</span>`,v:`<span class="${vw?"win-vn":""}">${vv}</span>`};
+  }
+  const rows=[
+    {m:"총 담당 티켓",   ...cmp(kr.total,vn.total), u:"건"},
+    {m:"완료",          ...cmp(kr.done,vn.done),    u:"건"},
+    {m:"완료율",        ...cmp(kr.doneRate,vn.doneRate), u:"%"},
+    {m:"평균 소요시간", ...cmp(durStr(kr.avgDur),durStr(vn.avgDur),false)},
+    {m:"평균 수정횟수", ...cmp(kr.avgRev+"회",vn.avgRev+"회",false)},
+    {m:"Good율",        ...cmp(kr.goodRate,vn.goodRate), u:"%"},
+    {m:"장애 완료",     ...cmp(kr.incDone,vn.incDone),   u:"건"},
+  ];
+
+  // 7일 완료 비교
+  const days7=Array.from({length:7},(_,i)=>{
+    const d=new Date(Date.now()-(6-i)*86400000);
+    const ds=d.toISOString().split("T")[0];
+    return{lbl:["일","월","화","수","목","금","토"][d.getDay()],kr:tickets.filter(t=>t.team==="KR"&&t.end_at?.startsWith(ds)).length,vn:tickets.filter(t=>t.team==="VN"&&t.end_at?.startsWith(ds)).length};
+  });
+  const maxD=Math.max(...days7.map(d=>Math.max(d.kr,d.vn)),1);
+
+  // 유형별 분포 비교
+  const typeComp=Object.entries(TYPE).map(([k,v])=>({
+    k,label:v.label,icon:v.icon,dot:v.dot,
+    kr:tickets.filter(t=>t.team==="KR"&&t.type===k).length,
+    vn:tickets.filter(t=>t.team==="VN"&&t.type===k).length,
+  }));
+  const maxTC=Math.max(...typeComp.map(t=>Math.max(t.kr,t.vn)),1);
+
+  return`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+    ${kbox("KR 총 담당",kr.total+"건",`완료율 ${kr.doneRate}%`,"#2563EB","goPane('analytics');setAnTab('compare')")}
+    ${kbox("VN 총 담당",vn.total+"건",`완료율 ${vn.doneRate}%`,"#10B981","goPane('analytics');setAnTab('compare')")}
+    ${kbox("KR 평균 소요",durStr(kr.avgDur),`수정 ${kr.avgRev}회`,"#2563EB","goPane('analytics');setAnTab('productivity')")}
+    ${kbox("VN 평균 소요",durStr(vn.avgDur),`수정 ${vn.avgRev}회`,"#10B981","goPane('analytics');setAnTab('productivity')")}
+  </div>
+
+  <div class="vs-card" style="margin-bottom:14px">
+    <div class="vs-hd">
+      <div class="vs-team"><span style="font-size:20px">🇰🇷</span><div><div class="vs-team-name" style="color:#2563EB">한국팀 (KR)</div><div style="font-size:10px;color:var(--g400)">기획·디자인·개발</div></div></div>
+      <div class="vs-center">VS</div>
+      <div class="vs-team vs-team-r"><span style="font-size:20px">🇻🇳</span><div><div class="vs-team-name" style="color:#10B981">베트남팀 (VN)</div><div style="font-size:10px;color:var(--g400)">핸들링·개발</div></div></div>
+    </div>
+    ${rows.map(r=>`<div class="vs-row">
+      <div class="vs-val">${r.k}${r.u||""}</div>
+      <div class="vs-metric">${r.m}</div>
+      <div class="vs-val vs-val-r">${r.v}${r.u||""}</div>
+    </div>`).join("")}
+  </div>
+
+  <div class="dg dg2">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">일별 완료 비교 <span class="card-sub">최근 7일</span></span>
+        <div style="display:flex;gap:8px">
+          <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#93C5FD;display:inline-block"></span>KR</span>
+          <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#6EE7B7;display:inline-block"></span>VN</span>
+        </div>
+      </div>
+      <div class="bar-chart">
+        ${days7.map(d=>`<div class="bc-col">
+          <div class="bc-bars">
+            <div class="bc-b" style="height:${d.kr/maxD*50}px;background:#93C5FD" title="KR:${d.kr}"></div>
+            <div class="bc-b" style="height:${d.vn/maxD*50}px;background:#6EE7B7" title="VN:${d.vn}"></div>
+          </div>
+          <div class="bc-lbl">${d.lbl}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">유형별 분포 비교</span></div>
+      ${typeComp.map(t=>`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span>${t.icon} <strong>${t.label}</strong></span>
+          <span style="color:var(--g400)">${t.kr}KR · ${t.vn}VN</span>
+        </div>
+        <div style="display:flex;height:6px;gap:2px;border-radius:4px;overflow:hidden">
+          <div style="background:#BFDBFE;flex:${t.kr}" title="KR: ${t.kr}"></div>
+          <div style="background:#6EE7B7;flex:${t.vn}" title="VN: ${t.vn}"></div>
+          <div style="background:var(--g100);flex:${maxTC-t.kr-t.vn}"></div>
+        </div>
+      </div>`).join("")}
+    </div>
+  </div>
+
+  <div class="dg dg2">
+    ${[{key:"KR",flag:"🇰🇷",color:"#2563EB",bg:"#EFF6FF",s:kr,members:KR},{key:"VN",flag:"🇻🇳",color:"#10B981",bg:"#ECFDF5",s:vn,members:VN}].map(tm=>`
+    <div class="card" style="background:${tm.bg};border:1px solid ${tm.color}25">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:22px">${tm.flag}</span>
+          <div><div style="font-size:13px;font-weight:800;color:${tm.color}">${tm.key}팀</div><div style="font-size:10px;color:var(--g400)">${tm.key==="KR"?"기획·디자인·개발":"핸들링·개발"}</div></div>
+        </div>
+        <span class="grade-chip gr-${grade(tm.s)}">${grade(tm.s)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        ${[{l:"총 담당",v:tm.s.total+"건"},{l:"완료율",v:tm.s.doneRate+"%"},{l:"평균 소요",v:durStr(tm.s.avgDur)},{l:"평균 수정",v:tm.s.avgRev+"회"},{l:"Good율",v:tm.s.goodRate+"%"},{l:"장애 완료",v:tm.s.incDone+"건"}]
+          .map(f=>`<div style="background:rgba(255,255,255,.7);border-radius:var(--r);padding:8px 10px"><div style="font-size:9px;color:${tm.color};font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">${f.l}</div><div style="font-size:15px;font-weight:800;font-family:'Space Mono',monospace;color:${tm.color}">${f.v}</div></div>`).join("")}
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid ${tm.color}20">
+        ${tm.members.map(m=>`<div style="display:flex;align-items:center;gap:4px;padding:2px 7px 2px 3px;border-radius:99px;background:rgba(255,255,255,.8);border:1px solid ${tm.color}30;font-size:10px;font-weight:600;color:${tm.color}"><div class="av" style="background:${m.color};width:15px;height:15px;font-size:6px">${tm.key==="KR"?m.name[0]:ini(m.name)}</div>${m.name.split(" ")[0]}</div>`).join("")}
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
+
+// ── 품질 관리 ──
+function buildQuality(){
+  const tot=tickets.length;
+  const rated=tickets.filter(t=>t.result);
+  const good=rated.filter(t=>t.result==="good").length;
+  const goodRate=rated.length?Math.round(good/rated.length*100):0;
+  const avgRev=tot?Math.round(tickets.reduce((s,t)=>s+t.revisions,0)/tot*10)/10:0;
+  const incidents=tickets.filter(t=>t.type==="incident");
+  const incOpen=incidents.filter(t=>t.qa!=="완료").length;
+  const highRev=tickets.filter(t=>t.revisions>=3).length;
+
+  // 수정횟수 분포
+  const revDist=[0,1,2].map(n=>({lbl:`${n}회`,cnt:tickets.filter(t=>t.revisions===n).length,c:n===0?"#10B981":n===1?"#F59E0B":"#EF4444"}));
+  revDist.push({lbl:"3회+",cnt:tickets.filter(t=>t.revisions>=3).length,c:"#B91C1C"});
+  const maxRev=Math.max(...revDist.map(d=>d.cnt),1);
+
+  // 장애 이력
+  const incList=incidents.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,8);
+
+  // 결과 분포
+  const resDist=["good","revise","fail"].map(r=>({
+    r,label:RESULT[r].label,color:RESULT[r].color,
+    cnt:rated.filter(t=>t.result===r).length,
+    pct:rated.length?Math.round(rated.filter(t=>t.result===r).length/rated.length*100):0,
+  }));
+
+  return`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+    ${kbox("Good율",goodRate+"%",`${rated.length}건 평가 기준`,goodRate>=75?"#10B981":"#B45309","goPane('analytics');setAnTab('quality')")}
+    ${kbox("평균 수정횟수",avgRev+"회","작업당 평균",avgRev>2?"#B91C1C":avgRev>1?"#B45309":"#10B981")}
+    ${kbox("3회↑ 수정",highRev+"건","품질 위험 작업",highRev>0?"#B91C1C":"#10B981","goPane('analytics');setAnTab('quality')")}
+    ${kbox("활성 장애",incOpen+"건","Incident 진행 중",incOpen>0?"#B91C1C":"#94A3B8","filterIncident()")}
+  </div>
+
+  <div class="dg dg2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">결과 평가 분포</span></div>
+      ${resDist.map(r=>`<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:700;color:${r.color}">${r.r==="good"?"✅":r.r==="revise"?"🔁":"❌"} ${r.label}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700">${r.cnt}건 (${r.pct}%)</span>
+        </div>
+        <div class="hbar-out"><div class="hbar-in" style="width:${r.pct}%;background:${r.color}"></div></div>
+      </div>`).join("")}
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">수정 횟수 분포</span></div>
+      <div class="bar-chart">
+        ${revDist.map(d=>`<div class="bc-col">
+          <div class="bc-val" style="color:${d.c}">${d.cnt}</div>
+          <div class="bc-bars"><div class="bc-b" style="height:${d.cnt/maxRev*50}px;background:${d.c};width:60%"></div></div>
+          <div class="bc-lbl">${d.lbl}</div>
+        </div>`).join("")}
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--g400)">0회 비율이 높을수록 초기 가이드 품질 우수</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hd"><span class="card-title">🚨 장애 이력 (Incident)</span><span class="card-sub">최근 ${incList.length}건</span></div>
+    ${incList.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:var(--g50)">
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">ID</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">내용</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">팀</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">상태</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">소요시간</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">수정</th>
+        <th style="padding:7px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200)">접수일</th>
+      </tr></thead>
+      <tbody>
+        ${incList.map(t=>{
+          const qm=QA[t.qa]||QA["신규"];
+          return`<tr style="border-bottom:1px solid var(--g100);cursor:pointer" onclick="goPane('tickets');selectTk('${t.id}')">
+            <td style="padding:8px 10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--g400)">${t.id}</td>
+            <td style="padding:8px 10px;max-width:180px"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</div></td>
+            <td style="padding:8px 10px"><span class="bdg ${t.team==="KR"?"tm-kr":"tm-vn"}">${t.team}</span></td>
+            <td style="padding:8px 10px"><span class="bdg ${qm.cls}">${qm.label}</span></td>
+            <td style="padding:8px 10px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700">${durStr(t.duration_min)}</td>
+            <td style="padding:8px 10px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:${t.revisions>2?"var(--red-d)":"var(--g700)"}">${t.revisions}</td>
+            <td style="padding:8px 10px;font-size:11px;color:var(--g500)">${fmtDate(t.req_at)}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table></div>`:`<div class="empty-state" style="padding:24px">장애 이력 없음</div>`}
+  </div>`;
+}
+
+// ── 생산성 ──
+function buildProductivity(){
+  const done=tickets.filter(t=>t.qa==="완료");
+  const wd=done.filter(t=>t.duration_min>0);
+  const avgDur=wd.length?Math.round(wd.reduce((s,t)=>s+t.duration_min,0)/wd.length):0;
+  const krWD=tickets.filter(t=>t.team==="KR"&&t.duration_min>0);
+  const vnWD=tickets.filter(t=>t.team==="VN"&&t.duration_min>0);
+  const krAvg=krWD.length?Math.round(krWD.reduce((s,t)=>s+t.duration_min,0)/krWD.length):0;
+  const vnAvg=vnWD.length?Math.round(vnWD.reduce((s,t)=>s+t.duration_min,0)/vnWD.length):0;
+  const avgRev=tickets.length?Math.round(tickets.reduce((s,t)=>s+t.revisions,0)/tickets.length*10)/10:0;
+
+  // 소요시간 분포
+  const tDist=[
+    {lbl:"30분↓",cnt:wd.filter(t=>t.duration_min<=30).length,  c:"#10B981"},
+    {lbl:"1시간", cnt:wd.filter(t=>t.duration_min>30&&t.duration_min<=60).length,  c:"#6EE7B7"},
+    {lbl:"2시간", cnt:wd.filter(t=>t.duration_min>60&&t.duration_min<=120).length, c:"#BFDBFE"},
+    {lbl:"4시간", cnt:wd.filter(t=>t.duration_min>120&&t.duration_min<=240).length,c:"#F59E0B"},
+    {lbl:"하루+", cnt:wd.filter(t=>t.duration_min>240).length,  c:"#EF4444"},
+  ];
+  const maxTD=Math.max(...tDist.map(d=>d.cnt),1);
+
+  // 유형별 평균 소요
+  const typeAvg=Object.entries(TYPE).map(([k,v])=>{
+    const td=wd.filter(t=>t.type===k);
+    return{k,icon:v.icon,label:v.label,avg:td.length?Math.round(td.reduce((s,t)=>s+t.duration_min,0)/td.length):0,cnt:td.length};
+  }).filter(d=>d.cnt>0).sort((a,b)=>b.avg-a.avg);
+  const maxTA=Math.max(...typeAvg.map(d=>d.avg),1);
+
+  // 주간 추이
+  const weeks=Array.from({length:8},(_,i)=>{
+    const from=new Date(Date.now()-(7-i)*7*86400000);
+    const to=new Date(from.getTime()+7*86400000);
+    const cnt=done.filter(t=>t.end_at&&new Date(t.end_at)>=from&&new Date(t.end_at)<to).length;
+    return{lbl:i===7?"이번":i===6?"저번":`${7-i}주전`,cnt};
+  });
+  const maxW=Math.max(...weeks.map(w=>w.cnt),1);
+
+  return`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+    ${kbox("전체 평균 소요",durStr(avgDur),"완료 기준 자동 계산","#5B21B6","goPane('analytics');setAnTab('productivity')")}
+    ${kbox("KR 평균 소요",durStr(krAvg),`${krWD.length}건 기준`,"#2563EB")}
+    ${kbox("VN 평균 소요",durStr(vnAvg),`${vnWD.length}건 기준`,"#10B981")}
+    ${kbox("평균 수정횟수",avgRev+"회","작업당",avgRev>2?"#B91C1C":avgRev>1?"#B45309":"#059669","goPane('analytics');setAnTab('quality')")}
+  </div>
+
+  <div class="dg dg2">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">소요시간 분포</span></div>
+      <div class="bar-chart">
+        ${tDist.map(d=>`<div class="bc-col">
+          <div class="bc-val" style="color:${d.c}">${d.cnt}</div>
+          <div class="bc-bars"><div class="bc-b" style="height:${d.cnt/maxTD*50}px;background:${d.c};width:60%"></div></div>
+          <div class="bc-lbl">${d.lbl}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">유형별 평균 소요시간</span></div>
+      ${typeAvg.map(d=>`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span>${d.icon} <strong>${d.label}</strong></span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700">${durStr(d.avg)}</span>
+        </div>
+        <div class="hbar-out"><div class="hbar-in" style="width:${Math.round(d.avg/maxTA*100)}%;background:${TYPE[d.k].dot}"></div></div>
+      </div>`).join("")}
+    </div>
+  </div>
+
+  <div class="dg dg2">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">주간 완료 추이</span></div>
+      <div class="bar-chart">
+        ${weeks.map(w=>`<div class="bc-col">
+          <div class="bc-val">${w.cnt||""}</div>
+          <div class="bc-bars"><div class="bc-b" style="height:${w.cnt/maxW*50}px;background:#BFDBFE;width:60%"></div></div>
+          <div class="bc-lbl" style="font-size:8px">${w.lbl}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">KR vs VN 처리속도</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
+        ${[{lbl:"KR팀",color:"#2563EB",bg:"#EFF6FF",avg:krAvg,cnt:krWD.length},{lbl:"VN팀",color:"#10B981",bg:"#ECFDF5",avg:vnAvg,cnt:vnWD.length}].map(t=>`
+        <div style="text-align:center;padding:14px;background:${t.bg};border-radius:var(--r)">
+          <div style="font-size:11px;font-weight:700;color:${t.color};margin-bottom:6px">${t.lbl}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:800;color:${t.color}">${durStr(t.avg)}</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:4px">${t.cnt}건 기준</div>
+        </div>`).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 담당자별 ──
+function buildMembers(){
+  const rows=ALL.map(m=>{
+    const mine=tickets.filter(t=>t.assignee===m.name);
+    const d=mine.filter(t=>t.qa==="완료");
+    const wd=d.filter(t=>t.duration_min>0);
+    const avgDur=wd.length?Math.round(wd.reduce((s,t)=>s+t.duration_min,0)/wd.length):0;
+    const avgRev=mine.length?Math.round(mine.reduce((s,t)=>s+t.revisions,0)/mine.length*10)/10:0;
+    const doneRate=mine.length?Math.round(d.length/mine.length*100):0;
+    const rated=d.filter(t=>t.result);
+    const goodRate=rated.length?Math.round(rated.filter(t=>t.result==="good").length/rated.length*100):0;
+    const g=grade({doneRate,avgRev,avgDur});
+    return{...m,total:mine.length,done:d.length,doneRate,avgDur,avgRev,goodRate,grade:g};
+  }).filter(m=>m.total>0).sort((a,b)=>b.total-a.total);
+  const maxT=Math.max(...rows.map(r=>r.total),1);
+
+  return`
+  <div style="background:#fff;border:1px solid var(--g200);border-radius:var(--rlg);overflow:hidden;margin-bottom:14px">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--g50)">
+        ${["담당자","팀","역할","총 작업","완료","완료율","평균 소요","평균 수정","Good율","등급"].map(h=>`<th style="padding:8px 11px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--g400);border-bottom:1px solid var(--g200);white-space:nowrap">${h}</th>`).join("")}
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr style="border-bottom:1px solid var(--g100)" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
+          <td style="padding:9px 11px"><div style="display:flex;align-items:center;gap:7px">
+            <div class="av" style="background:${r.color};width:28px;height:28px;font-size:10px;border-radius:8px">${r.team==="KR"?r.name[0]:ini(r.name)}</div>
+            <span style="font-size:12px;font-weight:600">${r.name.split(" ")[0]}</span>
+          </div></td>
+          <td style="padding:9px 11px"><span class="bdg ${r.team==="KR"?"tm-kr":"tm-vn"}">${r.team}</span></td>
+          <td style="padding:9px 11px;font-size:11px;color:var(--g500)">${r.role}</td>
+          <td style="padding:9px 11px">
+            <div style="font-weight:700;font-size:12px">${r.total}건</div>
+            <div style="height:3px;background:var(--g100);border-radius:99px;overflow:hidden;margin-top:3px;width:60px"><div style="height:100%;background:${r.color};border-radius:99px;width:${Math.round(r.total/maxT*100)}%"></div></div>
+          </td>
+          <td style="padding:9px 11px;font-weight:600;color:var(--green-d)">${r.done}</td>
+          <td style="padding:9px 11px;font-weight:700;color:${r.doneRate>=80?"var(--green-d)":r.doneRate>=60?"var(--amber-d)":"var(--red-d)"}">${r.doneRate}%</td>
+          <td style="padding:9px 11px;font-family:'Space Mono',monospace;font-weight:700">${durStr(r.avgDur)}</td>
+          <td style="padding:9px 11px;font-weight:700;color:${r.avgRev>2?"var(--red-d)":r.avgRev>1?"var(--amber-d)":"var(--green-d)"}">${r.avgRev}회</td>
+          <td style="padding:9px 11px;font-weight:700;color:${r.goodRate>=75?"var(--green-d)":r.goodRate>=50?"var(--amber-d)":"var(--red-d)"}">${r.goodRate?r.goodRate+"%":"—"}</td>
+          <td style="padding:9px 11px"><span class="grade-chip gr-${r.grade}">${r.grade}</span></td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><span class="card-title">담당자별 처리량 시각화</span><span class="card-sub">막대 = 총 작업 · 숫자 = 평균 수정횟수</span></div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:8px 0">
+      ${rows.map(r=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:54px">
+        <span style="font-size:10px;font-weight:700;color:${r.color}">${r.total}건</span>
+        <div style="width:36px;height:${Math.max(r.total/maxT*80,4)}px;background:${r.color};border-radius:4px 4px 0 0;opacity:.85;transition:height .5s"></div>
+        <span style="font-size:10px;font-weight:600;color:var(--g700)">${r.name.split(" ")[0]}</span>
+        <span style="font-size:9px;color:${r.avgRev>2?"var(--red-d)":r.avgRev>1?"var(--amber-d)":"var(--g400)"}">↩${r.avgRev}</span>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ⑤ 루틴
+// ════════════════════════════════════════════════════════
+function renderRt(){
+  const all=[...(routines.weekly||[]),...(routines.monthly||[])];
+  const done=all.filter(i=>i.done).length;
+  const pct=all.length?Math.round(done/all.length*100):0;
+  const pf=document.getElementById("rt-pf"), pt=document.getElementById("rt-pt");
+  if(pf) pf.style.width=pct+"%";
+  if(pt) pt.textContent=`${done} / ${all.length} 완료 (${pct}%)`;
+
+  document.getElementById("rt-sections").innerHTML=[
+    {key:"weekly",label:"주간 점검"},
+    {key:"monthly",label:"월간 점검"},
+  ].map(sec=>{
+    const items=routines[sec.key]||[];
+    const dc=items.filter(i=>i.done).length;
+    const allDone=dc===items.length&&items.length>0;
+    return`<div class="rt-section">
+      <div class="rt-sec-hd">
+        <span class="rt-sec-lbl">${sec.label}</span>
+        <span class="rt-sec-cnt${allDone?" all":""}">${dc}/${items.length}</span>
+        <div class="rt-sec-line"></div>
+        <button class="rt-copy-btn" onclick="copyRt('${sec.key}')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="2" width="9" height="12" rx="1"/><path d="M3 4H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1"/></svg>
+          복사
+        </button>
+      </div>
+      <div class="rt-list">
+        ${items.length?items.map(item=>{
+          const krM=KR.find(m=>m.name===item.kr);
+          const vnM=VN.find(m=>m.name===item.vn);
+          return`<div class="rt-item${item.done?" done":""}">
+            <div class="rt-chk${item.done?" on":""}" onclick="toggleRt('${sec.key}','${item.id}')">
+              ${item.done?`<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>`:""}
+            </div>
+            <div class="rt-item-body">
+              <div class="rt-item-text">${esc(item.text)}</div>
+              <div class="rt-item-meta">
+                ${krM?`<div class="av" style="background:${krM.color};width:14px;height:14px;font-size:5px">${krM.name[0]}</div><span class="rt-item-who">${krM.name.split(" ")[0]}</span>`:""}
+                ${vnM?`<div class="av" style="background:${vnM.color};width:14px;height:14px;font-size:5px">${ini(vnM.name)}</div><span class="rt-item-who">${vnM.name.split(" ")[0]}</span>`:""}
+              </div>
+            </div>
+            ${item.done?`<span style="font-size:10px;color:var(--green-d);font-weight:700;flex-shrink:0">✓</span>`:""}
+            <button class="rt-del" onclick="delRtItem('${sec.key}','${item.id}')">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg>
+            </button>
+          </div>`;
+        }).join(""):`<div style="padding:14px;text-align:center;color:var(--g400);font-size:12px">항목이 없습니다</div>`}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleRt(sec,id){
+  const item=(routines[sec]||[]).find(i=>i.id===id); if(!item) return;
+  item.done=!item.done; saveRt(); renderRt();
+  if(curPane==="dash") renderDash();
+}
+function quickToggleRt(sec,id){ toggleRt(sec,id); }
+function delRtItem(sec,id){
+  if(!confirm("삭제할까요?"))return;
+  routines[sec]=(routines[sec]||[]).filter(i=>i.id!==id);
+  saveRt(); renderRt(); toast("삭제됐습니다");
+}
+function resetRT(){
+  if(!confirm("오늘 체크를 모두 초기화할까요?"))return;
+  Object.values(routines).forEach(arr=>arr.forEach(i=>i.done=false));
+  saveRt(); renderRt(); toast("초기화됐습니다");
+}
+function copyRt(sec){
+  const label={weekly:"주간 점검",monthly:"월간 점검"}[sec];
+  const text=label+"\n"+(routines[sec]||[]).map(i=>`${i.done?"[x]":"[ ]"} ${i.text}`).join("\n");
+  navigator.clipboard?.writeText(text).then(()=>toast("복사됐습니다 ✓")).catch(()=>toast("복사 실패"));
+}
+function setRtFreq(f,el){ rtFreq=f; document.querySelectorAll(".rt-fq").forEach(b=>b.classList.remove("on")); el.classList.add("on"); }
+function openRtCreate(){ document.getElementById("rt-text").value=""; document.getElementById("m-routine").classList.add("on"); }
+function saveRtItem(){
+  const text=document.getElementById("rt-text").value.trim(); if(!text){document.getElementById("rt-text").focus();return;}
+  if(!routines[rtFreq])routines[rtFreq]=[];
+  routines[rtFreq].push({id:"rt_"+Date.now(),text,kr:document.getElementById("rt-kr").value,vn:document.getElementById("rt-vn").value,done:false});
+  saveRt(); cm("m-routine"); renderRt(); toast("추가됐습니다 ✓");
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+updateBadges();
+renderDash();
+renderRt();
+</script>
+</body>
+</html>
